@@ -1,0 +1,99 @@
+YBS Build Release Notes
+-----------------------
+
+v35.1:
+	- Updated build to use latest version (35.X) of DataLoader.  The new DataLoader.jar conflicts
+		with the other JAR files that are being copied to the ant.home/lib directory.  The
+		DataLoader.jar file isn't actually needed in the ant.home/lib directory (it is always
+		referenced from the project lib directory) so it has been excluded from the ant install
+		target.  If you have a copy of DataLoader.jar (old or new) in ant.home/lib please manually
+		delete it.
+		
+	- Updated all of the build files in preparation for initial public release.  Cleaned up several
+		classes and the build.xml script.
+	
+	- Updated the YBS-ant.jar file to also connect using the Tooling API in preparation for future
+		updates.  This required removing most of the WSC related classes from the ant-salesforce.jar
+		file to prevent conflicts with current versions (which are now supplied in separate force-wsc.jar, 
+		metadata.jar, partner.jar, and tooling.jar files).
+	
+	- If you have an existing project you will want to replace the following files/directories with
+		the current versions that are under the sfdc directory:
+			- build.xml
+			- lib/ directory (remove all files and replace with current versions)
+			- data/config/ directory (remove all files and replace with current versions) 
+	
+v35.0:
+	- Updated build to use API version 35.0 (Winter '16)
+	
+	- Added the following meta-data include settings for salesforce.properties
+		- sf.includeActionLinkGroupTemplates
+		- sf.includeAuraDefinitionBundles  (i.e. Lightning Bundles)
+		- sf.includeCustomPermissions
+		- sf.includeMatchingRules
+		- sf.includeNamedCredentials
+		- sf.includeLeadConvertSettings
+		- sf.includeNameSettings
+		- sf.includePathAssistantSettings
+		- sf.includePathAssistants
+		- sf.includePlatformCachePartitions
+		- sf.includeSharingRules (replaced old individual sharing rules removed)
+		- sf.includeSynonymDictionary
+	
+	- Removed the following old meta-data include settings for salesforce.properties:
+		- sf.includeAccountSharingRules
+		- sf.includeCampaignSharingRules
+		- sf.includeCaseSharingRules
+		- sf.includeContactSharingRules
+		- sf.includeCustomObjectSharingRules
+		- sf.includeLeadSharingRules
+		- sf.includeOpportunitySharingRules
+		- sf.includeUserSharingRules
+	
+	- Added new sf.excludeUserPermissions property in salesforce.properties to allow a
+		semi-colon (;) delimited list of userPermissions to remove from profiles.  We were
+		using a hard-coded list in the code of permissions to remove but now this is 
+		dynamic.  To keep the same functionality you would need to add the following to
+		salesforce.properties:
+		
+			sf.excludeUserPermissions=EditBillingInfo;ManageUnlistedGroups;AllowUniversalSearch;ViewCaseInteraction
+			
+		You will probably want to add the new ManageSandboxes permission since it is only 
+		available in Production environments and not in Sandboxes (which prevents a deploy).
+		The suggested default value of this property is:
+		
+			sf.excludeUserPermissions=EditBillingInfo;ManageUnlistedGroups;AllowUniversalSearch;ViewCaseInteraction;ManageSandboxes
+	
+	- Updated the ignore logic to require the TypeName prepended to the element name in each
+		ignore item.  The old format was:
+		
+			sf.ignore.XXX=Profile1;Profile2;Profile3
+			
+		But the new format must have the "TypeName." prepended to distinguish each
+		Metadata Type:
+		
+			sf.ignore.XXX=Profile.Profile1;Profile.Profile2;Profile.Profile3
+			
+		The reason for this change is because there can be cases where two different
+		Metadata elements may have the same fullName but can be different types.  If you
+		ignored one of the fullNames you would ignore both of them.
+		
+	- Logic Updates:
+		- Added missing logic for existing sf.includeChatterAnswersSettings property
+		
+		- Removed references to usernameSuffix logic which is no longer needed (it was
+			used to fix usernames for prod/sandbox versions but that is now done by
+			the retrieve/deploy tasks).
+			
+		- Removed the specialized logic for the Publisher Actions (QuickAction).  There
+			was a bug in the meta data API that prevented the object name from coming back
+			as the prefix in the fullName field for actions that are object-based.  For example,
+			an action named 'NewChildCase' on the 'Case' object would come back with a 
+			fullName of 'NewChildCase' instead of 'Case.NewChildCase'.  However, the value
+			in package.xml would need to be 'Case.NewChildCase' for the retrieve to work.
+			We had added a special 'sf.quickAction' property prefix to allow you to 
+			specify the Publisher Actions you wanted to include instead of doing a listMetadata
+			call to the get the full list.  This bug has now been fixed so we can use the
+			listMetadata call and treat Publisher Actions just like other meta-data where
+			we do a retrieve and get all them and then exclude any that are ignored.
+		

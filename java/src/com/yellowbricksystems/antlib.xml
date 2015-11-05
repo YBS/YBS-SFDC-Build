@@ -1,0 +1,6 @@
+<antlib>
+    <typedef name="packageXml" classname="com.yellowbricksystems.ant.CreatePackageXml"/>
+    <typedef name="destructiveChangesXml" classname="com.yellowbricksystems.ant.CreateDestructiveChangesXml"/>
+    <typedef name="postRetrieve" classname="com.yellowbricksystems.ant.PostRetrieveProcessor"/>
+    <typedef name="preDeploy" classname="com.yellowbricksystems.ant.PreDeployProcessor"/>
+</antlib>

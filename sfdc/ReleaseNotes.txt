@@ -1,0 +1,3 @@
+Release Notes: This file is used to keep track of any manual deployment steps which need
+to be performed for each version.
+

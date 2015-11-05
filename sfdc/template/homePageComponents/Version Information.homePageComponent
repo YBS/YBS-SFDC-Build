@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<HomePageComponent xmlns="http://soap.sforce.com/2006/04/metadata">
+    <body>&lt;div&gt;&lt;strong&gt;Version:  &lt;/strong&gt;_version_&lt;/div&gt;&lt;div&gt;&lt;strong&gt;Date: &lt;/strong&gt;_deploydate_&lt;/div&gt;</body>
+    <pageComponentType>htmlArea</pageComponentType>
+    <width>narrow</width>
+</HomePageComponent>

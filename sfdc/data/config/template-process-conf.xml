@@ -1,0 +1,75 @@
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<!--
+Copyright (c) 2015 Yellow Brick Systems LLC
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+	template-process-conf.xml
+	
+	This is the template process-conf.xml that is used by the importdata and
+	exportdata macros.  The _XXX_ values in this file are replaced by the actual
+	values when the task is executed.
+	
+	Author:  Jeff Bohanek (jeff@yellowbricksystems.com)
+-->
+<beans>
+	<bean id="export_object_" class="com.salesforce.dataloader.process.ProcessRunner" singleton="false">
+		<description>Exports data from a salesforce organization to a CSV file</description>
+		<property name="name" value="TemplatedCsvExtract"/>
+		<property name="configOverrideMap">
+			<map>
+				<entry key="sfdc.endpoint" value="_endpoint_"/>
+				<entry key="sfdc.username" value="_username_"/>
+				<entry key="sfdc.password" value="_password_"/>
+				<entry key="process.encryptionKeyFile" value="_keyfile_"/>
+				<entry key="sfdc.debugMessages" value="false"/>
+				<entry key="sfdc.timeoutSecs" value="600"/>
+				<entry key="sfdc.loadBatchSize" value="200"/>
+				<entry key="sfdc.extractionRequestSize" value="500"/>
+				<entry key="process.operation" value="extract"/>
+				<entry key="dataAccess.type" value="csvWrite"/>
+				<entry key="sfdc.entity" value="_object_"/>
+				<entry key="sfdc.extractionSOQL" value="_soql_"/>
+				<entry key="dataAccess.name" value="_file_"/>
+			</map>
+		</property>
+	</bean>
+	
+	<bean id="import_object_" class="com.salesforce.dataloader.process.ProcessRunner" singleton="false">
+		<description>Imports data from a CSV file into a target salesforce organization"</description>
+		<property name="name" value="TemplatedCsvExtract"/>
+		<property name="configOverrideMap">
+			<map>
+				<entry key="sfdc.endpoint" value="_endpoint_"/>
+				<entry key="sfdc.username" value="_username_"/>
+				<entry key="sfdc.password" value="_password_"/>
+				<entry key="process.encryptionKeyFile" value="_keyfile_"/>
+				<entry key="sfdc.debugMessages" value="false"/>
+				<entry key="sfdc.timeoutSecs" value="600"/>
+				<entry key="sfdc.loadBatchSize" value="200"/>
+				<entry key="sfdc.externalIdField" value="_externalid_"/>
+				<entry key="process.operation" value="upsert"/>
+				<entry key="process.mappingFile" value="_mappingfile_"/>
+				<entry key="dataAccess.type" value="csvRead"/>
+				<entry key="sfdc.entity" value="_object_"/>
+				<entry key="dataAccess.name" value="_file_"/>
+			</map>
+		</property>
+	</bean>
+</beans>

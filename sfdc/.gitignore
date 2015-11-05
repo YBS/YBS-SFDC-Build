@@ -1,0 +1,8 @@
+bin/
+tmp/
+doc/
+login.properties
+.DS_Store
+data/status/
+data/config/process-conf.xml
+data/config/TemplatedCsvExtract_lastRun.properties

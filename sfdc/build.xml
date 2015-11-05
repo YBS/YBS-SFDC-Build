@@ -1,0 +1,555 @@
+<?xml version="1.0"?>
+<!--
+Copyright (c) 2015 Yellow Brick Systems LLC
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+	build.xml
+	
+	This is a generic build.xml file that can be used to retreive and deploy Salesforce
+	components for a project.  The metadata that is retreived and deployed is determined
+	by the settings in the salesforce.properties file.  The user credentials are set in
+	the login.properties file.
+	
+	See the usage target and comments within this script for details on the 
+	available targets within this build script.
+	
+	Author:  Jeff Bohanek (jeff@yellowbricksystems.com)
+-->
+<project name="ybsSalesforceBuild" default="usage" basedir="." xmlns:sf="antlib:com.salesforce" xmlns:ybs="antlib:com.yellowbricksystems">
+	
+	<description>This is the default Yellow Brick Systems Salesforce build script.</description>
+	
+	<!--  Import the project data related targets from the data/projectbuild.xml script -->
+	<import file="data/projectbuild.xml" as="project" optional="true"/>
+	
+	<!--  Property files that control build behavior  -->
+	<property file="${basedir}/salesforce.properties"/>
+	<property file="${basedir}/login.properties"/>
+	<property file="${basedir}/project.properties"/>
+	
+	<property name="build.lib.dir" value="${basedir}/lib"/>
+	<property name="tmp.dir" value="${basedir}/tmp"/>
+	<property name="src.dir" value="${basedir}/src"/>
+	<property name="template.dir" value="${basedir}/template"/>
+	<property name="deploy.dir" value="${tmp.dir}/deploy"/>
+	<property name="xsl.dir" value="${basedir}/xsl"/>
+	<property name="doc.dir" value="${basedir}/doc"/>
+	
+	<!--  Default runAllTests to false if it was not set in the property files  -->
+	<property name="runAllTests" value="false"/>
+	
+	<!-- Initialize project -->
+	<target name="init">
+		<echo>Creating build directory structure ....</echo>
+		<mkdir dir="${tmp.dir}"/>
+		<mkdir dir="${src.dir}"/>
+		<tstamp>
+			<format property="build.timestamp" pattern="yyyy-MM-dd-HH-mm-ss-SSS"/>
+			<format property="deploy.timestamp" pattern="M/d/yyyy h:mm a"/>
+		</tstamp>
+		
+		<echo>Encrypting the password for DataLoader....</echo>
+		<property file="login.properties"/>
+		<java outputproperty="encryptedpassword" classname="com.salesforce.dataloader.security.EncryptionUtil" classpath="lib/DataLoader.jar" failonerror="true">
+			<sysproperty key="log4j.configuration" value="file:data/config/log4j.xml"/>
+			<arg value="-e"/>
+			<arg value="${sf.password}"/>
+			<arg value="data/config/key.txt"/>
+		</java>
+	</target>
+
+	<target name="clean">
+		<echo>Removing the build directory structure ....</echo>
+		<delete dir="${tmp.dir}"/>
+		<delete dir="${doc.dir}"/>
+	</target>
+	
+	<!--
+		[install]
+			This target will copy the required JAR files to the ant.home/lib directory so that
+			the build script works properly.  It excludes the DataLoader.jar file because that JAR
+			conflicts with the YBS-ant.jar.
+	-->
+	<target name="install">
+		<echo>Copying project lib files to ${ant.home}/lib</echo>
+		<copy todir="${ant.home}/lib" verbose="true" overwrite="true">
+			<fileset dir="${build.lib.dir}" excludes="DataLoader.jar"/>
+		</copy>
+	</target>
+	
+	<!--
+		[createPackageXml]
+			This target will use the contents of the login.properties and salesforce.proprties
+			files to connect to Salesforce and build a custom package.xml file that will be
+			used to manage the metadata for the project.  This runs a custom ant task that
+			was developed by Yellow Brick Systems.
+	-->
+	<target name="createPackageXml" depends="init">
+		<mkdir dir="${tmp.dir}"/>
+		<ybs:packageXml packageFileName="${tmp.dir}/package.xml"/>
+	</target>
+	
+	<!--
+		[retrieve]
+			This target will delete the current contents of the src directory and then it will 
+			retrieve the current contents of the Salesforce instance based on the login.properties 
+			and salesforce.properties into the src directory.  This target is used to get the latest 
+			Salesforce version prior to committing your changes to the repository.
+	-->
+	<target name="retrieve" depends="init,createPackageXml">
+		<delete>
+			<fileset dir="${src.dir}"/>
+		</delete>
+		<mkdir dir="${src.dir}"/>
+		<sf:retrieve 
+			username="${sf.username}" 
+			password="${sf.password}" 
+			serverurl="${sf.serverurl}" 
+			retrieveTarget="${src.dir}" 
+			unpackaged="${tmp.dir}/package.xml"/>
+		
+		<ybs:postRetrieve retrieveTarget="${src.dir}" />
+		
+		<antcall target="copyVersionFile">
+			<param name="target.dir" value="${src.dir}"/>
+		</antcall>
+	</target>
+	
+	<!--
+		[copyVersionFile]
+			This target is called post-retrieve to copy the template version component to the src
+			directory so that the build number and date/time is not committed to version control.
+			This is only done if the replaceVersion property is set in the project.properties file.
+	-->
+	<target name="copyVersionFile" if="${replaceVersion}">
+		<copy file="${template.dir}/${versionFile}" tofile="${target.dir}/${versionFile}" overwrite="true" failonerror="false"/>
+	</target>
+	
+	<!--
+		[retrieveTemp]
+			This target will retrieve the current contents of the Salesforce instance based on 
+			the login.properties and salesforce.properties into a timestamp tmp directory.
+			This can be used to do diffs between the current repository contents and the current
+			Salesforce version.
+	-->
+	<target name="retrieveTemp" depends="init,createPackageXml">
+		<mkdir dir="${tmp.dir}/${build.timestamp}"/>
+		<sf:retrieve 
+			username="${sf.username}" 
+			password="${sf.password}" 
+			serverurl="${sf.serverurl}" 
+			retrieveTarget="${tmp.dir}/${build.timestamp}" 
+			unpackaged="${tmp.dir}/package.xml"/>
+
+		<ybs:postRetrieve retrieveTarget="${tmp.dir}/${build.timestamp}" />
+		
+		<antcall target="copyVersionFile">
+			<param name="target.dir" value="${tmp.dir}"/>
+		</antcall>
+	</target>
+	
+	<!--
+		[prepareDeploy]
+		
+		This target will prepare to deploy the current contents of the src directory to
+		the target Salesforce environment based on the login.properties and salesforce.properties
+		files.  The current src directory will be copied to the tmp/deploy directory and a
+		destructiveChanges.xml file will be generate to delete any metadata component that is
+		in the target environment and is not referenced in the src/package.xml file.  It will also
+		perform any preDeploy logic to update the Metadata prior to deployment.
+	-->
+	<target name="prepareDeploy" depends="init,createDeployDirectories,createPackageXml,createDestructiveChangesXml,replaceVersion,preDeploy"/>
+	
+	<!--
+		[createDestructiveChangesXml]
+			This target will generate a destructiveChanges.xml file to delete any metadata component that is
+			in the target environment and is not referenced in the src/package.xml file.
+			
+			In order to generate the destructiveChanges and delete metadata in the destination environment the
+			deleteMetadata property must be set.  This can be set on the command line (-DdeleteMetadata=true) or 
+			within the salesforce.properties or login.properties files.
+	-->
+	<target name="createDestructiveChangesXml" depends="init,createPackageXml,createDeployDirectories" if="${deleteMetadata}">
+		<echo>Creating Destructive Changes file ${deploy.dir}/destructiveChanges.xml</echo>
+		<ybs:destructiveChangesXml 
+			sourcepackagefilename="${deploy.dir}/package.xml" 
+			destinationpackagefilename="${tmp.dir}/package.xml" 
+			destructivechangesfilename="${deploy.dir}/destructiveChanges.xml"/>
+	</target>
+	
+	<target name="createDeployDirectories" depends="init">
+		<delete dir="${deploy.dir}"/>
+		<mkdir dir="${deploy.dir}"/>
+		<copy todir="${deploy.dir}">
+			<fileset dir="${src.dir}"/>
+		</copy>
+	</target>
+	
+	<!--
+		[replaceVersion]
+			This target is called pre-retrieve to update the template version component in the deploy
+			directory to add the version number and deploy timestamp.  It will replace the text _version_
+			with the version number and the text _deploydate_ with the deploy timestamp.
+			This is only done if the replaceVersion property is set in the project.properties file.
+	-->
+	<target name="replaceVersion" depends="init" if="${replaceVersion}">
+		<echo>Setting version ${version} in ${versionFile}</echo>
+		<replace file="${deploy.dir}/${versionFile}">
+			<replacefilter token="_version_" value="${version}"/>
+			<replacefilter token="_deploydate_" value="${deploy.timestamp}"/>
+		</replace>
+	</target>
+	
+	<!--
+		[preDeploy]
+			This target calls the custom preDeploy ant task from the YBS-ant.jar file.  That task
+			will perform any updates required to the Metadata prior to deploying.
+	-->
+	<target name="preDeploy" depends="createDeployDirectories">
+		<ybs:preDeploy deployTarget="${deploy.dir}" />
+	</target>
+	
+	<!--
+		[deploy]
+			This target will execute the deploy of the current contents of the src directory to  
+			the target Salesforce environment based on the login.properties and salesforce.properties
+			files.  *** This target will try to insert/update/delete Metadata components in the
+			target Salesforce environment.  Please execute with care.  ***
+	-->
+	<target name="deploy" depends="prepareDeploy">
+		<sf:deploy 
+			username="${sf.username}" 
+			password="${sf.password}" 
+			serverurl="${sf.serverurl}" 
+			deployRoot="${deploy.dir}" 
+			rollbackOnError="true"
+			runAllTests="${runAllTests}"
+			pollWaitMillis="30000"
+			maxPoll="60"/>
+	</target>
+
+	<!--
+		[testDeploy]
+			This target will test the deploy of the current contents of the src directory to  
+			the target Salesforce environment based on the login.properties and salesforce.properties
+			files.  This will not perform the deploy, it will only check to see whether the deploy
+			would succeed.  When migrating to a Production environment you should always do a 
+			testDeploy first.
+	-->
+	<target name="testDeploy" depends="prepareDeploy">
+		<sf:deploy 
+			username="${sf.username}" 
+			password="${sf.password}" 
+			serverurl="${sf.serverurl}" 
+			deployRoot="${deploy.dir}" 
+			checkOnly="true"
+			rollbackOnError="true"
+			runAllTests="${runAllTests}"
+			pollWaitMillis="30000"
+			maxPoll="60"/>
+	</target>
+	
+	<!--
+		[documentFieldLevelSecurity]
+			This target will use XSL to transform the Metadata files into HTML documents that
+			are stored in the doc directory.  This transformation will show
+			the Field Level Security for each field and profile file.
+	-->
+	<target name="documentFieldLevelSecurity" depends="init">
+		<mkdir dir="${doc.dir}/ProfileSecurity-fields"/>
+		
+		<xslt 
+			basedir="${src.dir}/profiles" 
+			destdir="${doc.dir}/ProfileSecurity-fields"
+			extension=".html" 
+			style="${xsl.dir}/ProfileSecurity-fields.xsl"
+			filenameparameter="filename"/>	
+	</target>
+	
+	<!--
+		[documentLayoutFields]
+			This target will use XSL to transform the Metadata files into HTML documents that
+			are stored in the doc directory.  This transformation will show
+			the fields that are included on each layout.
+	-->
+	<target name="documentLayoutFields" depends="init">
+		<mkdir dir="${doc.dir}/layout-fields"/>
+		
+		<xslt 
+			basedir="${src.dir}/layouts" 
+			destdir="${doc.dir}/layout-fields"
+			extension=".html" 
+			style="${xsl.dir}/layout-fields.xsl"
+			filenameparameter="filename"/>	
+	</target>
+	
+	<!--
+		[documentValidationRules]
+			This target will use XSL to transform the Metadata files into HTML documents that
+			are stored in the doc directory.  This transformation will show
+			the Validation Rules for each object.
+	-->
+	<target name="documentValidationRules" depends="init">
+		<mkdir dir="${doc.dir}/ValidationRules"/>
+		
+		<xslt 
+			basedir="${src.dir}/objects" 
+			destdir="${doc.dir}/ValidationRules"
+			extension=".html" 
+			style="${xsl.dir}/ValidationRules.xsl"
+			filenameparameter="filename"/>	
+	</target>
+	
+	<!--
+		[documentPicklistValues]
+			This target will use XSL to transform the Metadata files into HTML documents that
+			are stored in the doc directory.  This transformation will show
+			the Picklist Values for each object.
+	-->
+	<target name="documentPicklistValues" depends="init">
+		<mkdir dir="${doc.dir}/PicklistValues"/>
+		
+		<xslt 
+		basedir="${src.dir}/objects" 
+		destdir="${doc.dir}/PicklistValues"
+		extension=".html" 
+		style="${xsl.dir}/PicklistValues.xsl"
+		filenameparameter="filename"/>   
+	</target>
+	
+	<!--
+		[documentPicklistValuesControllingField]
+			This target will use XSL to transform the Metadata files into HTML documents that
+			are stored in the doc directory.  This transformation will show
+			the Picklist Values Controlling Field for each object.
+	-->
+	<target name="documentPicklistValuesControllingField" depends="init">
+		<mkdir dir="${doc.dir}/PicklistValuesControllingField"/>
+		
+		<xslt 
+		basedir="${src.dir}/objects" 
+		destdir="${doc.dir}/PicklistValuesControllingField"
+		extension=".html" 
+		style="${xsl.dir}/PicklistValuesControllingField.xsl"
+		filenameparameter="filename"/>   
+	</target>
+	
+	<!--
+		[documentPicklistValuesRecordTypes]
+			This target will use XSL to transform the Metadata files into HTML documents that
+			are stored in the doc directory.  This transformation will show
+			the Picklist Values for each Record Type for each object.
+	-->
+	<target name="documentPicklistValuesRecordTypes" depends="init">
+		<mkdir dir="${doc.dir}/PicklistValuesRecordTypes"/>
+		
+		<xslt 
+		basedir="${src.dir}/objects" 
+		destdir="${doc.dir}/PicklistValuesRecordTypes"
+		extension=".html" 
+		style="${xsl.dir}/PicklistValuesRecordTypes.xsl"
+		filenameparameter="filename"/>   
+	</target>
+	
+	<!--
+		[documentCustomObjectFields]
+			This target will use XSL to transform the Metadata files into HTML documents that
+			are stored in the doc directory.  This transformation will show
+			the Custom Fields for each object.
+	-->
+	<target name="documentCustomObjectFields" depends="init">
+		<mkdir dir="${doc.dir}/CustomObject-fields"/>
+		
+		<xslt 
+		basedir="${src.dir}/objects" 
+		destdir="${doc.dir}/CustomObject-fields"
+		extension=".html" 
+		style="${xsl.dir}/CustomObject-fields.xsl"
+		filenameparameter="filename"/>   
+	</target>
+	
+	<!--
+		[documentReportObjectFields]
+			This target will use XSL to transform the Metadata files into HTML documents that
+			are stored in the doc directory.  This transformation will show
+			the fields included on each report.
+	-->
+	<target name="documentReportObjectFields" depends="init">
+		<mkdir dir="${doc.dir}/ReportObject-fields"/>
+		
+		<xslt 
+		basedir="${src.dir}/reports" 
+		destdir="${doc.dir}/ReportObject-fields"
+		extension=".xls" 
+		style="${xsl.dir}/ReportObject-fields.xsl"
+		filenameparameter="filename"/>
+	</target>
+	
+	<!--
+		[exportdata]
+			This macro is used by projectbuild.xml targets to create tasks to export
+			data from Salesforce.
+	-->
+	<macrodef name="exportdata">
+		<attribute name="file"/>
+		<attribute name="object"/>
+		<element name="soql"/>
+		<sequential>
+			<string id="soqlstring"><soql/></string>
+			<echo message="Exporting @{object}"/>
+			<mkdir dir="data/exports"/>
+		
+			<copy file="data/config/template-process-conf.xml" tofile="data/config/process-conf.xml" overwrite="true" failonerror="true"/>
+			<replace file="data/config/process-conf.xml">
+				<replacefilter token="_endpoint_" value="${sf.serverurl}"/>
+				<replacefilter token="_username_" value="${sf.username}"/>
+				<replacefilter token="_password_" value="${encryptedpassword}"/>
+				<replacefilter token="_object_" value="@{object}"/>
+				<replacefilter token="_soql_" value="${toString:soqlstring}"/>
+				<replacefilter token="_file_" value="data/exports/@{file}.csv"/>
+				<replacefilter token="_keyfile_" value="data/config/key.txt"/>
+			</replace>
+		
+			<java classname="com.salesforce.dataloader.process.ProcessRunner" classpath="lib/DataLoader.jar" failonerror="true" fork="true">
+				<sysproperty key="salesforce.config.dir" value="data/config"/>
+				<arg line="process.name=export@{object}"/>
+			</java>
+		</sequential>
+	</macrodef>
+	
+	<!--
+		[importdata]
+			This macro is used by projectbuild.xml targets to create tasks to import
+			data to Salesforce.
+	-->
+	<macrodef name="importdata">
+		<attribute name="file"/>
+		<attribute name="object"/>
+		<attribute name="mappingfile"/>
+		<attribute name="externalid"/>
+		<sequential>
+		<echo message="Importing @{object}"/>
+		<delete dir="tmp/exports"/>
+		<mkdir dir="tmp/exports"/>
+		<copy file="data/config/template-process-conf.xml" tofile="data/config/process-conf.xml" overwrite="true" failonerror="true"/>
+		<replace file="data/config/process-conf.xml">
+			<replacefilter token="_endpoint_" value="${sf.serverurl}"/>
+			<replacefilter token="_username_" value="${sf.username}"/>
+			<replacefilter token="_password_" value="${encryptedpassword}"/>
+			<replacefilter token="_object_" value="@{object}"/>
+			<replacefilter token="_soql_" value="@{soql}"/>
+			<replacefilter token="_file_" value="data/exports/@{file}.csv"/>
+			<replacefilter token="_keyfile_" value="data/config/key.txt"/>
+			<replacefilter token="_mappingfile_" value="data/mappings/@{mappingfile}.sdl"/>
+			<replacefilter token="_externalid_" value="@{externalid}"/>
+		</replace>
+			
+		<java classname="com.salesforce.dataloader.process.ProcessRunner" classpath="lib/DataLoader.jar" failonerror="true" fork="true">
+			<sysproperty key="salesforce.config.dir" value="data/config"/>
+			<arg line="process.name=import@{object}"/>
+		</java>
+		</sequential> 
+	</macrodef>
+
+	<!-- Default target  -->
+	<target name="usage">
+		<echo>
+These are the targets supported by this ANT build script:
+
+[install]
+	This target will copy the required JAR files to the ant.home/lib directory so that
+	the build script works properly.  It excludes the DataLoader.jar file because that JAR
+	conflicts with the YBS-ant.jar.
+	
+[retrieve]
+	This target will delete the current contents of the src directory and then it will 
+	retrieve the current contents of the Salesforce instance based on the login.properties 
+	and salesforce.properties into the src directory.  This target is used to get the latest 
+	Salesforce version prior to committing your changes to the repository.
+			
+[retrieveTemp]
+	This target will retrieve the current contents of the Salesforce instance based on 
+	the login.properties and salesforce.properties into a timestamp tmp directory.
+	This can be used to do diffs between the current repository contents and the current
+	Salesforce version.
+
+[prepareDeploy]
+	This target will prepare to deploy the current contents of the src directory to
+	the target Salesforce environment based on the login.properties and salesforce.properties
+	files.  The current src directory will be copied to the tmp/deploy directory and a
+	destructiveChanges.xml file will be generate to delete any metadata component that is
+	in the target environment and is not referenced in the src/package.xml file.  It will also
+	perform any preDeploy logic to update the Metadata prior to deployment.
+
+[testDeploy]
+	This target will test the deploy of the current contents of the src directory to  
+	the target Salesforce environment based on the login.properties and salesforce.properties
+	files.  This will not perform the deploy, it will only check to see whether the deploy
+	would succeed.  When migrating to a Production environment you should always do a 
+	testDeploy first.
+
+[deploy]
+	This target will execute the deploy of the current contents of the src directory to  
+	the target Salesforce environment based on the login.properties and salesforce.properties
+	files.  *** This target will try to insert/update/delete Metadata components in the
+	target Salesforce environment.  Please execute with care.  ***
+
+[documentFieldLevelSecurity]
+	This target will use XSL to transform the Metadata files into HTML documents that
+	are stored in the doc directory.  This transformation will show
+	the Field Level Security for each field and profile file.
+
+[documentLayoutFields]
+	This target will use XSL to transform the Metadata files into HTML documents that
+	are stored in the doc directory.  This transformation will show
+	the fields that are included on each layout.
+
+[documentValidationRules]
+	This target will use XSL to transform the Metadata files into HTML documents that
+	are stored in the doc directory.  This transformation will show
+	the Validation Rules for each object.
+
+[documentPicklistValues]
+	This target will use XSL to transform the Metadata files into HTML documents that
+	are stored in the doc directory.  This transformation will show
+	the Picklist Values for each object.
+
+[documentPicklistValuesControllingField]
+	This target will use XSL to transform the Metadata files into HTML documents that
+	are stored in the doc directory.  This transformation will show
+	the Picklist Values Controlling Field for each object.
+
+[documentPicklistValuesRecordTypes]
+	This target will use XSL to transform the Metadata files into HTML documents that
+	are stored in the doc directory.  This transformation will show
+	the Picklist Values for each Record Type for each object.
+
+[documentCustomObjectFields]
+	This target will use XSL to transform the Metadata files into HTML documents that
+	are stored in the doc directory.  This transformation will show
+	the Custom Fields for each object.
+
+[documentReportObjectFields]
+	This target will use XSL to transform the Metadata files into HTML documents that
+	are stored in the doc directory.  This transformation will show
+	the fields included on each report.
+		</echo>
+	</target>
+</project>

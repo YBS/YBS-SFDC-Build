@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright (c) 2015 Yellow Brick Systems LLC
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+	projectbuild.xml
+	
+	This build file is used to store project related targets, specifically
+	data related that are used to import and export data from Salesforce.
+	These targets would include tasks that use the importdata and exportdata
+	macros that are defined in build.xml.
+	
+	1) Example of an exportAccounts target that exports the Name and Reference_Id__c
+	of all Accounts in the current org, where the Reference_Id__c is an external id.
+	
+	<target name="exportAccounts" depends="init">
+		<exportdata file="Accounts" object="Account">
+			<soql>
+				<![CDATA[
+					Select 
+							Name,
+							Reference_Id__c,
+					FROM	Account
+					ORDER BY Reference_Id__c
+				]]>
+			</soql>
+		</exportdata>
+	</target>
+	
+	2) Example of an importAccounts target that upserts Accounts using the
+	Reference_Id__c as the externalId.  There must be an Account.sdl mapping file 
+	in the data/mappings directory and an Accounts.csv file in the data/exports directory.
+	
+		<target name="importAccounts" depends="init">
+			<importdata file="Accounts" mappingfile="Account" object="Account" externalid="Reference_Id__c"/>
+		</target>
+	
+	You can have your targets perform multiple imports and exports as well as individually.
+-->
+<project name="dataBuild">
+	<dirname property="data.basedir" file="${ant.file.projectbuild}"/>
+	
+	<target name="exportAllData" depends="exportAccounts, exportContacts" />
+	<target name="importAllData" depends="importAccounts, importContacts" />
+	
+	<target name="exportAccounts" depends="init">
+		<exportdata file="Accounts" object="Account">
+			<soql>
+				<![CDATA[
+					Select 
+							Name,
+							Website,
+							Reference_Id__c
+					FROM	Account
+					ORDER BY Reference_Id__c
+				]]>
+			</soql>
+		</exportdata>
+	</target>
+	
+	<target name="importAccounts" depends="init">
+		<importdata file="Accounts" mappingfile="Account" object="Account" externalid="Reference_Id__c"/>
+	</target>
+	
+	<target name="exportContacts" depends="init">
+		<exportdata file="Contacts" object="Contact">
+			<soql>
+				<![CDATA[
+					Select 
+							FirstName,
+							LastName,
+							Email,
+							Account.Reference_Id__c,
+							Reference_Id__c
+					FROM	Contact
+					ORDER BY Reference_Id__c
+				]]>
+			</soql>
+		</exportdata>
+	</target>
+	
+	<target name="importContacts" depends="init">
+		<importdata file="Contacts" mappingfile="Contact" object="Contact" externalid="Reference_Id__c"/>
+	</target>
+	
+</project>
+
