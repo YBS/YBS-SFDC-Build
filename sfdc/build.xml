@@ -283,6 +283,17 @@ SOFTWARE.
 			filenameparameter="filename"/>	
 	</target>
 	
+	<target name="documentRecordTypeVisibilities" depends="init">
+		<mkdir dir="${doc.dir}/ProfileRecordTypeVisibilities"/>
+		
+		<xslt 
+			basedir="${src.dir}/profiles" 
+			destdir="${doc.dir}/ProfileRecordTypeVisibilities"
+			extension=".html" 
+			style="${xsl.dir}/ProfileRecordTypeVisibilities.xsl"
+			filenameparameter="filename"/>	
+	</target>
+	
 	<!--
 		[documentLayoutFields]
 			This target will use XSL to transform the Metadata files into HTML documents that
