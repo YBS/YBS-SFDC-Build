@@ -15,7 +15,7 @@
         <th>Country Visible</th>        
         <th>State Name</th>
         <th>State</th>
-        <th>State</th>
+        <th>StateCode</th>
         <th>State Active</th>        
         <th>State Visible</th>        
       </tr>
