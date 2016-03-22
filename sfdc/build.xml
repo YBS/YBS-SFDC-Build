@@ -414,6 +414,24 @@ SOFTWARE.
 	</target>
 	
 	<!--
+		[documentStateCountryPicklists]
+			This target will use XSL to transform the Metadata files into HTML documents that
+			are stored in the doc directory.  This transformation will show
+			the fields included on each report.
+	-->
+	<target name="documentStateCountryPicklists" depends="init">
+		<mkdir dir="${doc.dir}"/>
+		
+		<xslt 
+		basedir="${src.dir}/settings" 
+		destdir="${doc.dir}"
+		extension=".xls" 
+		style="${xsl.dir}/StateCountryPicklistValues.xsl"
+		in="${src.dir}/settings/Address.settings"
+		out="${doc.dir}/StateCountryPicklists.xls"/>
+	</target>
+	
+	<!--
 		[exportdata]
 			This macro is used by projectbuild.xml targets to create tasks to export
 			data from Salesforce.
