@@ -46,7 +46,7 @@ public class SalesforceTask extends Task {
 	protected MetadataConnection metadataConnection = null;
 	protected ToolingConnection toolingConnection = null;
 	
-	protected double asOfVersion = 35.0;
+	protected double asOfVersion = 37.0;
 
 	// Property Names for salesforce.properties file to control metadata that is
 	// retrieved/deployed
