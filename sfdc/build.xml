@@ -234,6 +234,16 @@ SOFTWARE.
 			target Salesforce environment.  Please execute with care.  ***
 	-->
 	<target name="deploy" depends="prepareDeploy">
+		<echo message="Deploying using ${sf.username}"/>
+        <input
+            message="Are you sure you want to continue (y/n)?"
+            validargs="y,n"
+            addproperty="do.deploy"
+        />
+        <condition property="do.abort">
+            <equals arg1="n" arg2="${do.deploy}"/>
+        </condition>
+        <fail if="do.abort">Build aborted by user.</fail>
 		<sf:deploy 
 			username="${sf.username}" 
 			password="${sf.password}" 
@@ -474,7 +484,16 @@ SOFTWARE.
 		<attribute name="mappingfile"/>
 		<attribute name="externalid"/>
 		<sequential>
-		<echo message="Importing @{object}"/>
+		<echo message="Importing @{object} using ${sf.username}"/>
+        <input
+            message="Are you sure you want to continue (y/n)?"
+            validargs="y,n"
+            addproperty="do.import"
+        />
+        <condition property="do.abort">
+            <equals arg1="n" arg2="${do.import}"/>
+        </condition>
+        <fail if="do.abort">Build aborted by user.</fail>
 		<delete dir="tmp/exports"/>
 		<mkdir dir="tmp/exports"/>
 		<copy file="data/config/template-process-conf.xml" tofile="data/config/process-conf.xml" overwrite="true" failonerror="true"/>

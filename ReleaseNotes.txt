@@ -4,6 +4,8 @@ YBS Build Release Notes
 v37.0:
     - Updated build lib files to use API Version 37.0 (Summer '16)
     
+    - Added confirmation input for deploy and import.
+    
     
 
 v35.1:
