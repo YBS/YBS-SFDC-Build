@@ -1,6 +1,11 @@
 YBS Build Release Notes
 -----------------------
 
+v37.0:
+    - Updated build lib files to use API Version 37.0 (Summer '16)
+    
+    
+
 v35.1:
 	- Updated build to use latest version (35.X) of DataLoader.  The new DataLoader.jar conflicts
 		with the other JAR files that are being copied to the ant.home/lib directory.  The
