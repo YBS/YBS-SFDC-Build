@@ -6,7 +6,10 @@ v37.0:
     
     - Added confirmation input for deploy and import.
     
-    
+    - Implemented documentObjectFields to create a CSV file with
+      documentation related to an objects fields (type, description, created date,
+      layouts, field trip, etc...).  Use following syntax to run:
+        ant documentObjectFields -Dsf.objectApiName=Account
 
 v35.1:
 	- Updated build to use latest version (35.X) of DataLoader.  The new DataLoader.jar conflicts

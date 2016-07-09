@@ -40,6 +40,7 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -81,6 +82,19 @@ public class ProcessorUtilities {
 		DOMSource source = new DOMSource(doc);
 		StreamResult result = new StreamResult(new File(fullFileName));
 		transformer.transform(source, result);
+	}
+	
+	public static String getTagValue(Element element, String tagName) {
+		String tagValue = "";
+		if (element != null) {
+			NodeList nodes = element.getElementsByTagName(tagName);
+			if (nodes != null && nodes.getLength() == 1) {
+				Node node = nodes.item(0);
+				tagValue = node.getTextContent();
+			}
+		}
+		return tagValue;
+		
 	}
 
 }

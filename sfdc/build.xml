@@ -277,6 +277,20 @@ SOFTWARE.
 	</target>
 	
 	<!--
+		[documentObjectFields]
+			This target will create a CSV file with the field definitions
+			for an object.  You must use the sf.objectApiName property
+			to specify the object.
+	-->
+	<target name="documentObjectFields" depends="init">
+		<mkdir dir="${doc.dir}/ObjectFields"/>
+		
+		<ybs:documentObjectFields
+		    sourceDirectory="${src.dir}"
+		    destinationDirectory="${doc.dir}/ObjectFields"/>
+	</target>
+
+	<!--
 		[documentFieldLevelSecurity]
 			This target will use XSL to transform the Metadata files into HTML documents that
 			are stored in the doc directory.  This transformation will show
@@ -558,6 +572,12 @@ These are the targets supported by this ANT build script:
 	the target Salesforce environment based on the login.properties and salesforce.properties
 	files.  *** This target will try to insert/update/delete Metadata components in the
 	target Salesforce environment.  Please execute with care.  ***
+
+[documentObjectFields]
+    This target will create a CSV file with the field definitions
+    for an object.  You must use the sf.objectApiName property
+    to specify the object. For example:
+    ant documentObjectFields -Dsf.objectApiName=Account
 
 [documentFieldLevelSecurity]
 	This target will use XSL to transform the Metadata files into HTML documents that
