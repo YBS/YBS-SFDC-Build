@@ -226,14 +226,7 @@ SOFTWARE.
 		<ybs:preDeploy deployTarget="${deploy.dir}" />
 	</target>
 	
-	<!--
-		[deploy]
-			This target will execute the deploy of the current contents of the src directory to  
-			the target Salesforce environment based on the login.properties and salesforce.properties
-			files.  *** This target will try to insert/update/delete Metadata components in the
-			target Salesforce environment.  Please execute with care.  ***
-	-->
-	<target name="deploy" depends="prepareDeploy">
+	<target name="confirmDeploy">
 		<echo message="Deploying using ${sf.username}"/>
         <input
             message="Are you sure you want to continue (y/n)?"
@@ -244,6 +237,16 @@ SOFTWARE.
             <equals arg1="n" arg2="${do.deploy}"/>
         </condition>
         <fail if="do.abort">Build aborted by user.</fail>
+	</target>
+	
+	<!--
+		[deploy]
+			This target will execute the deploy of the current contents of the src directory to  
+			the target Salesforce environment based on the login.properties and salesforce.properties
+			files.  *** This target will try to insert/update/delete Metadata components in the
+			target Salesforce environment.  Please execute with care.  ***
+	-->
+	<target name="deploy" depends="confirmDeploy,prepareDeploy">
 		<sf:deploy 
 			username="${sf.username}" 
 			password="${sf.password}" 
