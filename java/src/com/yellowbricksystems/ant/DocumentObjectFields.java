@@ -240,7 +240,10 @@ public class DocumentObjectFields extends SalesforceTask {
 				tableEnumOrId = (String) so.getId();
 			}
 		}
-		
+		if (tableEnumOrId.equals("Task") || tableEnumOrId.equals("Event")) {
+			// Task/Event fields are actually on Activity Object
+			tableEnumOrId = "Activity";
+		}
 		String fieldQuery = "select Id, DeveloperName, CreatedDate from CustomField where TableEnumOrId = '" + tableEnumOrId + "'";
 		QueryResult qr = toolingConnection.query(fieldQuery);
 		SObject[] records = qr.getRecords();
