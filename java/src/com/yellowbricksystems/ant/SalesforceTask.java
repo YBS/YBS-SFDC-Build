@@ -28,6 +28,8 @@ SOFTWARE.
  */
 package com.yellowbricksystems.ant;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 
@@ -50,6 +52,8 @@ public class SalesforceTask extends Task {
 
 	// Property Names for salesforce.properties file to control metadata that is
 	// retrieved/deployed
+	
+	public static final String SF_INCLUDE_MANAGED_PACKAGES = "sf.includeManagedPackages";
 	
 	// Apex
 	public static final String SF_INCLUDE_CLASSES = "sf.includeClasses";
@@ -232,6 +236,7 @@ public class SalesforceTask extends Task {
 	
 	protected void initSalesforceConnection() {
 		try {
+			long startTime = System.nanoTime();
 			String username = getProject().getProperty(SF_USER_PROPERTY_NAME);
 			String password = getProject().getProperty(SF_PASSWORD_PROPERTY_NAME);
 			String serverUrl = getProject().getProperty(SF_SERVER_URL_PROPERTY_NAME);
@@ -274,7 +279,8 @@ public class SalesforceTask extends Task {
 				String asOfVersionString = serverUrl.substring(lastSlash + 1);
 				asOfVersion = Double.parseDouble(asOfVersionString);
 			}
-
+			long elapsedTime = System.nanoTime() - startTime;
+			log("Connected to Salesforce [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			throw new BuildException("Error trying to connect to Salesforce.");

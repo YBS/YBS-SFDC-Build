@@ -32,6 +32,8 @@ package com.yellowbricksystems.ant;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,6 +41,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
@@ -49,17 +52,34 @@ import com.sforce.soap.metadata.MetadataConnection;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.QueryResult;
 import com.sforce.soap.partner.sobject.SObject;
+import com.sforce.soap.tooling.ToolingConnection;
+import com.sforce.soap.tooling.sobject.ApexClass;
+import com.sforce.soap.tooling.sobject.ApexComponent;
+import com.sforce.soap.tooling.sobject.ApexPage;
+import com.sforce.soap.tooling.sobject.ApexTrigger;
+import com.sforce.soap.tooling.sobject.CustomField;
+import com.sforce.soap.tooling.sobject.Layout;
+import com.sforce.soap.tooling.sobject.RecordType;
 
 public class CreatePackageXml extends SalesforceTask {
 
+	public static final String BUILD_VERSION = "37.1";
+	
 	public static final String SF_IGNORE_PREFIX = "sf.ignore";
 
 	protected String packageFileName;
+	
+	protected Boolean includeManagedPackages = false;
 
 	protected Map<String, List<String>> typesMap = new HashMap<String, List<String>>();
 
 	protected HashSet<String> ignoreList = new HashSet<String>();
-
+	
+	// Object related collections
+	protected List<String> objectNames = new ArrayList<String>();
+	// Object API Name => TableEnumOrId
+	protected Map<String, String> objectNameEnumIdMap = new HashMap<String, String>();
+	
 	public String getPackageFileName() {
 		return packageFileName;
 	}
@@ -91,13 +111,17 @@ public class CreatePackageXml extends SalesforceTask {
 	{
 		try
 		{
+			log("Creating package.xml using build version " + BUILD_VERSION);
+			
 			initSalesforceConnection();
-
+			
+			// Initial types should not include any managed package records
+			includeManagedPackages = false;
 			// Apex Types
-			addType(SF_INCLUDE_CLASSES, "ApexClass");
-			addType(SF_INCLUDE_COMPONENTS, "ApexComponent");
-			addType(SF_INCLUDE_PAGES, "ApexPage");
-			addType(SF_INCLUDE_TRIGGERS, "ApexTrigger");
+			addToolingType(SF_INCLUDE_CLASSES, "ApexClass");
+			addToolingType(SF_INCLUDE_COMPONENTS, "ApexComponent");
+			addToolingType(SF_INCLUDE_PAGES, "ApexPage");
+			addToolingType(SF_INCLUDE_TRIGGERS, "ApexTrigger");
 			addType(SF_INCLUDE_FLEXI_PAGES, "FlexiPage");
 			// Due to a listMetadata bug that doesn't return the correct fullName for active Flows, we
 			// can't use listMetadata to retrieve the list of Flows.  Instead we can only add it as a 
@@ -118,7 +142,7 @@ public class CreatePackageXml extends SalesforceTask {
 			addType(SF_INCLUDE_CONNECTED_APPS, "ConnectedApp");
 			addType(SF_INCLUDE_APPLICATIONS, "CustomApplication");
 			addType(SF_INCLUDE_APPLICATION_COMPONENTS, "CustomApplicationComponent");
-			addType(SF_INCLUDE_LABELS, "CustomLabels");
+			addType(SF_INCLUDE_LABELS, "CustomLabel");
 			addType(SF_INCLUDE_CUSTOM_PAGE_WEBLINKS, "CustomPageWebLink");
 			addType(SF_INCLUDE_TABS, "CustomTab");
 			addFolderType(SF_INCLUDE_DOCUMENTS, SF_INCLUDE_DOCUMENTS_FOLDER_PREFIX, null,
@@ -132,6 +156,8 @@ public class CreatePackageXml extends SalesforceTask {
 			// Problem deploying if you break out objects into pieces.  We need to keep the objects whole
 			// in addition to listing out the pieces so that we can figure out which pieces need
 			// to be deleted.
+			includeManagedPackages = getPropertyBoolean(SF_INCLUDE_MANAGED_PACKAGES);
+			loadObjects();
 			if (getPropertyBoolean(SF_INCLUDE_ACTION_OVERRIDES) || getPropertyBoolean(SF_INCLUDE_BUSINESS_PROCESSES) ||
 					getPropertyBoolean(SF_INCLUDE_COMPACT_LAYOUTS) || getPropertyBoolean(SF_INCLUDE_CUSTOM_FIELDS) ||
 					getPropertyBoolean(SF_INCLUDE_FIELD_SETS) || getPropertyBoolean(SF_INCLUDE_LIST_VIEWS) ||
@@ -140,20 +166,27 @@ public class CreatePackageXml extends SalesforceTask {
 					getPropertyBoolean(SF_INCLUDE_VALIDATION_RULES) || getPropertyBoolean(SF_INCLUDE_WEBLINKS)) {
 				// We are retrieving at least some Object component, so add the CustomObject metadata and it will
 				// be filtered later in Post-Retrieve
-				addTypeFromListMetadata("CustomObject", null);
+				addObjects();
 
+				addObjectToolingType(SF_INCLUDE_CUSTOM_FIELDS, "CustomField");
+				addType(SF_INCLUDE_RECORD_TYPES, "RecordType");
+				// The following objects don't properly support managed package
+				// retrieves, so don't allow the managed package components to be
+				// included for now
+				includeManagedPackages = false;
 				addType(SF_INCLUDE_BUSINESS_PROCESSES, "BusinessProcess");
-				addType(SF_INCLUDE_CUSTOM_FIELDS, "CustomField");
 				addType(SF_INCLUDE_FIELD_SETS, "FieldSet");
 				addType(SF_INCLUDE_LIST_VIEWS, "ListView", SF_INCLUDE_LIST_VIEWS_PREFIX);
-				addType(SF_INCLUDE_RECORD_TYPES, "RecordType");
 				addType(SF_INCLUDE_SHARING_REASONS, "SharingReason");
 				addType(SF_INCLUDE_VALIDATION_RULES, "ValidationRule");
 				addType(SF_INCLUDE_WEBLINKS, "WebLink");
 			}
+			// Finished objects, so exclude managed packages
+			includeManagedPackages = false;
+			
 			addType(SF_INCLUDE_OBJECT_TRANSLATIONS, "CustomObjectTranslation");
 			addType(SF_INCLUDE_EXTERNAL_DATA_SOURCES, "ExternalDataSource");
-			addType(SF_INCLUDE_LAYOUTS, "Layout");
+			addObjectToolingType(SF_INCLUDE_LAYOUTS, "Layout");
 			addType(SF_INCLUDE_PUBLISHER_ACTIONS, "QuickAction");
 			addType(SF_INCLUDE_ACTION_LINK_GROUP_TEMPLATES, "ActionLinkGroupTemplate");
 
@@ -308,6 +341,7 @@ public class CreatePackageXml extends SalesforceTask {
 
 	protected void addTypeFromListMetadata(String typeName, String memberPrefix) throws IOException {
 		try {
+			long startTime = System.nanoTime();
 			MetadataConnection metaConnection = getMetadataConnection();
 			ListMetadataQuery query = new ListMetadataQuery();
 			query.setType(typeName);
@@ -315,7 +349,7 @@ public class CreatePackageXml extends SalesforceTask {
 			FileProperties[] properties = metaConnection.listMetadata(new ListMetadataQuery[] {query}, asOfVersion);
 			for (FileProperties p : properties) {
 				String namespace = p.getNamespacePrefix();
-				if (namespace == null || namespace.trim().length() == 0) {
+				if (includeManagedPackages || namespace == null || namespace.trim().length() == 0) {
 					String fullName = p.getFullName();
 					String matchName = fullName;
 					String[] splitNames = fullName.split("\\.");
@@ -329,6 +363,8 @@ public class CreatePackageXml extends SalesforceTask {
 					}
 				}
 			}
+			long elapsedTime = System.nanoTime() - startTime;
+			log("Added " + typeName + " from List Metadata [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			throw new BuildException("Exception trying to add " + typeName + " components.");
@@ -349,11 +385,239 @@ public class CreatePackageXml extends SalesforceTask {
 			addTypeFromListMetadata(typeName, memberPrefix);
 		}
 	}
+	
+	protected void loadObjects() {
+		try {
+			long startTime = System.nanoTime();
+			// We need to use List Metadata so we can get a complete list of both
+			// Standard and Custom Objects
+			objectNames = new ArrayList<String>();
+			objectNameEnumIdMap = new HashMap<String, String>();
+			ListMetadataQuery query = new ListMetadataQuery();
+			query.setType("CustomObject");
+			
+			FileProperties[] properties = metadataConnection.listMetadata(new ListMetadataQuery[] {query}, asOfVersion);
+			for (FileProperties p : properties) {
+				String namespace = p.getNamespacePrefix();
+				if (includeManagedPackages || namespace == null || namespace.trim().length() == 0) {
+					String objectName = p.getFullName();
+					String objectEnumId = p.getId();
+					if (!objectName.endsWith("__c")) {
+						// Standard object so use name as enum
+						objectEnumId = objectName;
+					}
+					objectNames.add(objectName);
+					objectNameEnumIdMap.put(objectName,  objectEnumId);
+				}
+			}
+			long elapsedTime = System.nanoTime() - startTime;
+			log("Cached objects from List Metadata [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new BuildException("Exception trying to load objects.");
+		}
+		
+	}
+	
+	protected void addObjects() {
+		for (String objectName : objectNames) {
+			addTypeMember("CustomObject", objectName);
+		}
+	}
+	
+	protected void addObjectToolingType(String propertyName, String typeName) throws BuildException{
+		if (getPropertyBoolean(propertyName)) {
+			addObjectTypeFromToolingQuery(typeName);
+		}
+	}
+	
+	protected void addObjectTypeFromToolingQuery(String typeName) throws BuildException {
+		try {
+			long startTime = System.nanoTime();
+			Map<String, List<com.sforce.soap.tooling.sobject.SObject>> objectResultMap = new HashMap<String, List<com.sforce.soap.tooling.sobject.SObject>>();
+			String query = "select Id, DeveloperName, TableEnumOrId, NamespacePrefix from CustomField order by DeveloperName";
+			if (typeName.equals("Layout")) {
+				query = "select Id, Name, TableEnumOrId, NamespacePrefix from Layout where LayoutType = 'Standard' order by Name";
+			}
+			Boolean done = false;
+			com.sforce.soap.tooling.QueryResult qr = toolingConnection.query(query);
+			while (!done) {
+				com.sforce.soap.tooling.sobject.SObject[] records = qr.getRecords();
+				String namespace = null;
+				for (com.sforce.soap.tooling.sobject.SObject so : records) {
+					String tableEnumOrId = null;
+					if (so instanceof CustomField) {
+						tableEnumOrId = ((CustomField) so).getTableEnumOrId();
+						namespace = ((CustomField)so).getNamespacePrefix();
+					} else if (so instanceof Layout) {
+						tableEnumOrId = ((Layout) so).getTableEnumOrId();
+						namespace = ((Layout)so).getNamespacePrefix();
+					}
+					if (includeManagedPackages || namespace == null || namespace.trim().length() == 0) {
+						if (tableEnumOrId != null) {
+							List<com.sforce.soap.tooling.sobject.SObject> objects = objectResultMap.get(tableEnumOrId);
+							if (objects == null) {
+								objects = new ArrayList<com.sforce.soap.tooling.sobject.SObject>();
+								objectResultMap.put(tableEnumOrId, objects);
+							}
+							objects.add(so);
+						}
+					}
+				}
+				if (qr.isDone()) {
+					done = true;
+				} else {
+					qr = toolingConnection.queryMore(qr.getQueryLocator());
+				}
+			}
+			// Loop through objects in alphabetical order
+			for (String objectName : objectNames) {
+				String objectEnumOrId = objectNameEnumIdMap.get(objectName);
+				if (objectEnumOrId != null) {
+					List<com.sforce.soap.tooling.sobject.SObject> objects = objectResultMap.get(objectEnumOrId);
+					if (objects != null) {
+						for (com.sforce.soap.tooling.sobject.SObject so : objects) {
+							String fullName = objectName ;
+							if (so instanceof CustomField) {
+								CustomField cf = (CustomField) so;
+								String namespace = cf.getNamespacePrefix();
+								if (namespace != null && namespace.trim().length() > 0) {
+									fullName += "." + namespace + "__" + cf.getDeveloperName() + "__c";
+								} else {
+									fullName += "." + ((CustomField) so).getDeveloperName() + "__c";
+								}
+							}
+							if (so instanceof Layout) {
+								Layout l = (Layout) so;
+								String namespace = l.getNamespacePrefix();
+								if (namespace != null && namespace.trim().length() > 0) {
+									fullName += "-" + namespace + "__" + l.getName();
+								} else {
+									fullName += "-" + l.getName();
+								}
+								// Need to encode Layout name since it is not a DeveloperName
+								fullName = encodePackageMember(fullName);
+							}
+							addTypeMember(typeName, fullName);
+						}
+					}
+				}
+			}
+			long elapsedTime = System.nanoTime() - startTime;
+			log("Added " + typeName + " from Tooling query [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new BuildException("Exception trying to add " + typeName + " components.");
+		}
+	}
+	
+	protected String encodePackageMember(String fullName) throws UnsupportedEncodingException{
+		if (fullName != null) {
+			return fullName.replace("%", "%25")
+					.replace("!", "%21")
+					.replace("\"", "%22")
+					.replace("#", "%23")
+					.replace("$", "%24")
+					.replace("&", "%26")
+					.replace("'", "%27")
+					.replace("(", "%28")
+					.replace(")", "%29")
+					.replace("+", "%2B")
+					.replace(",", "%2C")
+					.replace(".", "%2E")
+					.replace("/", "%2F")
+					.replace(":", "%3A")
+					.replace(";", "%3B")
+					.replace("<", "%3C")
+					.replace("=", "%3D")
+					.replace(">", "%3E")
+					.replace("?", "%3F")
+					.replace("@", "%40")
+					.replace("[", "%5B")
+					.replace("\\", "%5C")
+					.replace("]", "%5D")
+					.replace("^", "%5E")
+					.replace("`", "%60")
+					;
+		}
+		return null;
+	}
+	
+	protected void addToolingType(String propertyName, String typeName) throws IOException{
+		addToolingType(propertyName, typeName, null);
+	}
 
+	protected void addToolingType(String propertyName, String typeName, String memberPrefixPropertyName) throws IOException{
+		String memberPrefix = null;
+		if (memberPrefixPropertyName != null) {
+			memberPrefix = getProject().getProperty(memberPrefixPropertyName);
+		}
+
+		if (getPropertyBoolean(propertyName)) {
+			addTypeFromToolingQuery(typeName, memberPrefix);
+		}
+	}
+	
+	protected void addTypeFromToolingQuery(String typeName, String memberPrefix) throws IOException {
+		try {
+			long startTime = System.nanoTime();
+			String query = "select Id, Name, NamespacePrefix from " + typeName;
+			if (includeManagedPackages) {
+				query += " order by Name";
+			} else {
+				query += " where NamespacePrefix = null order by Name";
+			}
+			Boolean done = false;
+			com.sforce.soap.tooling.QueryResult qr = toolingConnection.query(query);
+			while (!done) {
+				com.sforce.soap.tooling.sobject.SObject[] records = qr.getRecords();
+				for (com.sforce.soap.tooling.sobject.SObject so : records) {
+					String name = null;
+					String namespacePrefix = null;
+					if (so instanceof ApexClass) {
+						name = ((ApexClass) so).getName();
+						namespacePrefix = ((ApexClass) so).getNamespacePrefix();
+					} else if (so instanceof ApexComponent) {
+						name = ((ApexComponent) so).getName();
+						namespacePrefix = ((ApexComponent) so).getNamespacePrefix();
+					} else if (so instanceof ApexPage) {
+						name = ((ApexPage) so).getName();
+						namespacePrefix = ((ApexPage) so).getNamespacePrefix();
+					} else if (so instanceof ApexTrigger) {
+						name = ((ApexTrigger) so).getName();
+						namespacePrefix = ((ApexTrigger) so).getNamespacePrefix();
+					}
+					if (name != null) {
+						String fullName = name;
+						if (namespacePrefix != null && namespacePrefix.trim().length() > 0) {
+							fullName = namespacePrefix + "__" + name;
+						}
+						String matchName = fullName;
+						if (memberPrefix == null || memberPrefix.trim().length() == 0 ||
+								matchName.startsWith(memberPrefix)) {
+							addTypeMember(typeName, fullName);
+						}
+					}
+				}
+				if (qr.isDone()) {
+					done = true;
+				} else {
+					qr = toolingConnection.queryMore(qr.getQueryLocator());
+				}
+			}
+			long elapsedTime = System.nanoTime() - startTime;
+			log("Added " + typeName + " from Tooling query [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new BuildException("Exception trying to add " + typeName + " components.");
+		}
+	}
+	
 	protected void addFolderType(String includePropertyName, String includeFolderPrefixPropertyName,
 			String includeUnfiledPublicPropertyName, String folderType, String objectName, String objectFolderFieldName) throws IOException {
 		if (getPropertyBoolean(includePropertyName)) {
 			try {
+				long startTime = System.nanoTime();
 				PartnerConnection connection = getPartnerConnection();
 
 				String folderPrefix = getProject().getProperty(includeFolderPrefixPropertyName);
@@ -385,6 +649,8 @@ public class CreatePackageXml extends SalesforceTask {
 						addTypeMember(objectName, "unfiled$public/" + developerName);
 					}
 				}
+				long elapsedTime = System.nanoTime() - startTime;
+				log("Added " + objectName + " from SOQL query [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				throw new BuildException("Exception retrieving folder list.");

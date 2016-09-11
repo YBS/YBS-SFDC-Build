@@ -1,6 +1,19 @@
 YBS Build Release Notes
 -----------------------
 
+v37.1:
+    - Included new "sf.includeManagedPackages" setting in salesforce.properties to
+      control whether managed package components should be included (defaults to false).
+      
+    - Updated build to switch retrieve of some metadata components to use Tooling API
+      instead of List Metadata calls.
+    
+    - Added log statements during createPackageXml to show progress and timings
+    
+    - Changed behavior of following types:
+        - sf.includeLabels now using CustomLabel Metadata type instead of CustomLabels type
+          which allows each label to be individually listed in package.xml.
+    
 v37.0:
     - Updated build lib files to use API Version 37.0 (Summer '16)
     
