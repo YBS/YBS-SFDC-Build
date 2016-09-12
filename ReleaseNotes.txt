@@ -4,6 +4,13 @@ YBS Build Release Notes
 v37.1:
     - Included new "sf.includeManagedPackages" setting in salesforce.properties to
       control whether managed package components should be included (defaults to false).
+    
+    - Fixed filter of CustomFields from objects, permission sets and profiles to
+      filter if CustomField is actually custom (ends with __c) and is not in package.xml.
+      This fixes issues where picklists were still in object definition and removes
+      field level security for fields that are being ignored.  This also results in 
+      all standard fields being included in object definitions (they were in field
+      level security).
       
     - Updated build to switch retrieve of some metadata components to use Tooling API
       instead of List Metadata calls.
