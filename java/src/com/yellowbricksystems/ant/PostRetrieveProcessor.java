@@ -153,6 +153,7 @@ public class PostRetrieveProcessor extends SalesforceTask {
 	protected void filterPermissionSets() throws Exception {
 		
 		if (getPropertyBoolean(SF_INCLUDE_PERMISSION_SETS)) {
+			List<String> packageCustomFields = packageTypeMap.get("CustomField");
 			String permissionSetsDirectoryName = retrieveTarget + "/permissionsets";
 			File permissionSetsDirectory = new File(permissionSetsDirectoryName);
 			String[] files = permissionSetsDirectory.list();
@@ -197,7 +198,6 @@ public class PostRetrieveProcessor extends SalesforceTask {
 							// Field Permissions
 							// Loop through and see if any should be removed (based on ignore/namespace)
 							NodeList customFieldNodes = permissionSetElement.getElementsByTagName("fieldPermissions");
-							List<String> packageCustomFields = packageTypeMap.get("CustomField");
 							if (customFieldNodes != null) {
 								for (int j=0; j < customFieldNodes.getLength(); j++) {
 									Node customFieldNode = customFieldNodes.item(j);
@@ -241,6 +241,7 @@ public class PostRetrieveProcessor extends SalesforceTask {
 			File profilesDirectory = new File(profilesDirectoryName);
 			String[] files = profilesDirectory.list();
 			if (files != null) {
+				List<String> packageCustomFields = packageTypeMap.get("CustomField");
 				for (String fileName : files) {
 					String fullFileName = profilesDirectoryName + "/" + fileName;
 					File xmlFile = new File(fullFileName);
@@ -299,7 +300,6 @@ public class PostRetrieveProcessor extends SalesforceTask {
 							// Field Permissions
 							// Loop through and see if any should be removed (based on ignore/namespace)
 							NodeList customFieldNodes = profileElement.getElementsByTagName("fieldPermissions");
-							List<String> packageCustomFields = packageTypeMap.get("CustomField");
 							if (customFieldNodes != null) {
 								for (int j=0; j < customFieldNodes.getLength(); j++) {
 									Node customFieldNode = customFieldNodes.item(j);
@@ -342,6 +342,14 @@ public class PostRetrieveProcessor extends SalesforceTask {
 		File objectsDirectory = new File(objectsDirectoryName);
 		String[] files = objectsDirectory.list();
 		if (files != null) {
+			List<String> packageBusinessProcesses = packageTypeMap.get("BusinessProcess");
+			List<String> packageCustomFields = packageTypeMap.get("CustomField");
+			List<String> packageFieldSets = packageTypeMap.get("FieldSet");
+			List<String> packageListViews = packageTypeMap.get("ListView");
+			List<String> packageRecordTypes = packageTypeMap.get("RecordType");
+			List<String> packageSharingReasons = packageTypeMap.get("SharingReason");
+			List<String> packageValidationRules = packageTypeMap.get("ValidationRule");
+			List<String> packageWeblinks = packageTypeMap.get("WebLink");
 			for (String fileName : files) {
 				String objectName = fileName.split("\\.")[0];
 				String fullFileName = objectsDirectoryName + "/" + fileName;
@@ -371,7 +379,6 @@ public class PostRetrieveProcessor extends SalesforceTask {
 						// Business Process
 						// Loop through and see if any should be removed (based on ignore/namespace)
 						NodeList businessProcessNodes = objectElement.getElementsByTagName("businessProcesses");
-						List<String> packageBusinessProcesses = packageTypeMap.get("BusinessProcess");
 						if (businessProcessNodes != null) {
 							for (int j=0; j < businessProcessNodes.getLength(); j++) {
 								Node businessProcessNode = businessProcessNodes.item(j);
@@ -404,7 +411,6 @@ public class PostRetrieveProcessor extends SalesforceTask {
 						// Custom Fields
 						// Loop through and see if any should be removed (based on ignore/namespace)
 						NodeList customFieldNodes = objectElement.getElementsByTagName("fields");
-						List<String> packageCustomFields = packageTypeMap.get("CustomField");
 						if (customFieldNodes != null) {
 							for (int j=0; j < customFieldNodes.getLength(); j++) {
 								Node customFieldNode = customFieldNodes.item(j);
@@ -417,6 +423,10 @@ public class PostRetrieveProcessor extends SalesforceTask {
 										if (fullNameNodes != null && fullNameNodes.getLength() > 0) {
 											Node fullNameNode = fullNameNodes.item(0);
 											String fullName = objectName + "." + fullNameNode.getTextContent();
+											if (fullName.startsWith("Event.") || fullName.startsWith("Task.")) {
+												String fieldName = fullName.split("\\.")[1];
+												fullName = "Activity." + fieldName;
+											}
 											// Remove Custom Fields that are not in the package.xml
 											if (!packageCustomFields.contains(fullName) && fullName.endsWith("__c")) {
 												removeNodes.add(customFieldNode);
@@ -429,7 +439,6 @@ public class PostRetrieveProcessor extends SalesforceTask {
 						// Field Sets
 						// Loop through and see if any should be removed (based on ignore/namespace)
 						NodeList fieldSetNodes = objectElement.getElementsByTagName("fieldSets");
-						List<String> packageFieldSets = packageTypeMap.get("FieldSet");
 						if (fieldSetNodes != null) {
 							for (int j=0; j < fieldSetNodes.getLength(); j++) {
 								Node fieldSetNode = fieldSetNodes.item(j);
@@ -453,7 +462,6 @@ public class PostRetrieveProcessor extends SalesforceTask {
 						// List Views
 						// Loop through and see if any should be removed (based on ignore/namespace/prefix)
 						NodeList listViewNodes = objectElement.getElementsByTagName("listViews");
-						List<String> packageListViews = packageTypeMap.get("ListView");
 						if (listViewNodes != null) {
 							for (int j=0; j < listViewNodes.getLength(); j++) {
 								Node listViewNode = listViewNodes.item(j);
@@ -477,7 +485,6 @@ public class PostRetrieveProcessor extends SalesforceTask {
 						// RecordType
 						// Loop through and see if any should be removed (based on ignore/namespace)
 						NodeList recordTypeNodes = objectElement.getElementsByTagName("recordTypes");
-						List<String> packageRecordTypes = packageTypeMap.get("RecordType");
 						if (recordTypeNodes != null) {
 							for (int j=0; j < recordTypeNodes.getLength(); j++) {
 								Node recordTypeNode = recordTypeNodes.item(j);
@@ -485,6 +492,7 @@ public class PostRetrieveProcessor extends SalesforceTask {
 									removeNodes.add(recordTypeNode);
 								} else {
 									if (recordTypeNode.getNodeType() == Node.ELEMENT_NODE) {
+										List<Node> removePicklistValuesNodes = new ArrayList<Node>();
 										Element recordTypeElement = (Element) recordTypeNode;
 										NodeList fullNameNodes = recordTypeElement.getElementsByTagName("fullName");
 										if (fullNameNodes != null && fullNameNodes.getLength() > 0) {
@@ -493,6 +501,33 @@ public class PostRetrieveProcessor extends SalesforceTask {
 											if (!packageRecordTypes.contains(fullName)) {
 												removeNodes.add(recordTypeNode);
 											}
+										}
+										
+										// Check if there are picklist values for ignored fields
+										NodeList picklistValuesNodes = recordTypeElement.getElementsByTagName("picklistValues");
+										if (picklistValuesNodes != null) {
+											for (int k=0; k < picklistValuesNodes.getLength(); ++k) {
+												Node picklistValuesNode = picklistValuesNodes.item(k);
+												if (picklistValuesNode.getNodeType() == Node.ELEMENT_NODE) {
+													Element picklistValuesElement = (Element) picklistValuesNode;
+													NodeList picklistNodes = picklistValuesElement.getElementsByTagName("picklist");
+													if (picklistNodes != null && picklistNodes.getLength() > 0) {
+														Node picklistNode = picklistNodes.item(0);
+														String fullName = objectName + "." + picklistNode.getTextContent();
+														if (fullName.startsWith("Event.") || fullName.startsWith("Task.")) {
+															String fieldName = fullName.split("\\.")[1];
+															fullName = "Activity." + fieldName;
+														}
+														// Remove Custom Fields that are not in the package.xml
+														if (!packageCustomFields.contains(fullName) && fullName.endsWith("__c")) {
+															removePicklistValuesNodes.add(picklistValuesNode);
+														}
+													}
+												}
+											}
+										}
+										if (removePicklistValuesNodes.size() > 0) {
+											ProcessorUtilities.removeNodes(doc, recordTypeNode, removePicklistValuesNodes);
 										}
 									}
 								}
@@ -510,7 +545,6 @@ public class PostRetrieveProcessor extends SalesforceTask {
 						// SharingReason
 						// Loop through and see if any should be removed (based on ignore/namespace)
 						NodeList sharingReasonNodes = objectElement.getElementsByTagName("sharingReasons");
-						List<String> packageSharingReasons = packageTypeMap.get("SharingReason");
 						if (sharingReasonNodes != null) {
 							for (int j=0; j < sharingReasonNodes.getLength(); j++) {
 								Node sharingReasonNode = sharingReasonNodes.item(j);
@@ -543,7 +577,6 @@ public class PostRetrieveProcessor extends SalesforceTask {
 						// Validation Rules
 						// Loop through and see if any should be removed (based on ignore/namespace)
 						NodeList validationRulesNodes = objectElement.getElementsByTagName("validationRules");
-						List<String> packageValidationRules = packageTypeMap.get("ValidationRule");
 						if (validationRulesNodes != null) {
 							for (int j=0; j < validationRulesNodes.getLength(); j++) {
 								Node validationRulesNode = validationRulesNodes.item(j);
@@ -567,7 +600,6 @@ public class PostRetrieveProcessor extends SalesforceTask {
 						// Weblinks
 						// Loop through and see if any should be removed (based on ignore/namespace)
 						NodeList weblinkNodes = objectElement.getElementsByTagName("webLinks");
-						List<String> packageWeblinks = packageTypeMap.get("WebLink");
 						if (weblinkNodes != null) {
 							for (int j=0; j < weblinkNodes.getLength(); j++) {
 								Node weblinkNode = weblinkNodes.item(j);
