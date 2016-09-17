@@ -168,7 +168,10 @@ public class CreatePackageXml extends SalesforceTask {
 				// be filtered later in Post-Retrieve
 				addObjects();
 
-				addObjectToolingType(SF_INCLUDE_CUSTOM_FIELDS, "CustomField");
+				addType(SF_INCLUDE_CUSTOM_FIELDS, "CustomField");
+				// Can't use Tooling API for Custom Fields because deleted (and even erased)
+				// fields still come back in the query and cannot be filtered
+				//addObjectToolingType(SF_INCLUDE_CUSTOM_FIELDS, "CustomField");
 				addType(SF_INCLUDE_RECORD_TYPES, "RecordType");
 				// The following objects don't properly support managed package
 				// retrieves, so don't allow the managed package components to be
@@ -355,6 +358,11 @@ public class CreatePackageXml extends SalesforceTask {
 					String[] splitNames = fullName.split("\\.");
 					if (splitNames.length == 2) {
 						// This is a subset of Object so it include the Object name first and we just want the component name
+						String objectName = splitNames[0];
+						if (!objectNameEnumIdMap.containsKey(objectName)) {
+							// We are not including this object so don't include this component
+							continue;
+						}
 						matchName = splitNames[1];
 					}
 					if (memberPrefix == null || memberPrefix.trim().length() == 0 ||
