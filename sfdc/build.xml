@@ -458,6 +458,17 @@ SOFTWARE.
 		out="${doc.dir}/StateCountryPicklists.xls"/>
 	</target>
 	
+	<target name="documentObjectTranslations" depends="init">
+		<mkdir dir="${doc.dir}"/>
+		
+		<xslt 
+		basedir="${src.dir}/objectTranslations" 
+		destdir="${doc.dir}/ObjectTranslations"
+		extension=".xls" 
+		style="${xsl.dir}/ObjectTranslations.xsl"
+		filenameparameter="filename"/>
+	</target>
+	
 	<!--
 		[exportdata]
 			This macro is used by projectbuild.xml targets to create tasks to export
@@ -621,6 +632,12 @@ These are the targets supported by this ANT build script:
 	This target will use XSL to transform the Metadata files into HTML documents that
 	are stored in the doc directory.  This transformation will show
 	the fields included on each report.
+
+[documentObjectTranslations]
+	This target will use XSL to transform the Metadata files into HTML documents that
+	are stored in the doc directory.  This transformation will show
+	the object translation overrides.
+	
 		</echo>
 	</target>
 </project>
