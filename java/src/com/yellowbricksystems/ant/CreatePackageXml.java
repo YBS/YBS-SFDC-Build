@@ -189,7 +189,7 @@ public class CreatePackageXml extends SalesforceTask {
 			
 			addType(SF_INCLUDE_OBJECT_TRANSLATIONS, "CustomObjectTranslation");
 			addType(SF_INCLUDE_EXTERNAL_DATA_SOURCES, "ExternalDataSource");
-			addObjectToolingType(SF_INCLUDE_LAYOUTS, "Layout");
+			addType(SF_INCLUDE_LAYOUTS, "Layout");
 			addType(SF_INCLUDE_PUBLISHER_ACTIONS, "QuickAction");
 			addType(SF_INCLUDE_ACTION_LINK_GROUP_TEMPLATES, "ActionLinkGroupTemplate");
 
