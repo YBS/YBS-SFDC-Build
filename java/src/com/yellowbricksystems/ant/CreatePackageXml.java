@@ -63,7 +63,7 @@ import com.sforce.soap.tooling.sobject.RecordType;
 
 public class CreatePackageXml extends SalesforceTask {
 
-	public static final String BUILD_VERSION = "37.1";
+	public static final String BUILD_VERSION = "37.2";
 	
 	public static final String SF_IGNORE_PREFIX = "sf.ignore";
 
@@ -138,6 +138,9 @@ public class CreatePackageXml extends SalesforceTask {
 			addType(SF_INCLUDE_PLATFORM_CACHE_PARTITIONS, "PlatformCachePartition");
 
 			// App Types
+			// The following block of objects work ok for Managed Packages, so bring them
+			// into the build, if required
+			includeManagedPackages = getPropertyBoolean(SF_INCLUDE_MANAGED_PACKAGES);
 			addType(SF_INCLUDE_APP_MENUS, "AppMenu");
 			addType(SF_INCLUDE_CONNECTED_APPS, "ConnectedApp");
 			addType(SF_INCLUDE_APPLICATIONS, "CustomApplication");
@@ -156,7 +159,6 @@ public class CreatePackageXml extends SalesforceTask {
 			// Problem deploying if you break out objects into pieces.  We need to keep the objects whole
 			// in addition to listing out the pieces so that we can figure out which pieces need
 			// to be deleted.
-			includeManagedPackages = getPropertyBoolean(SF_INCLUDE_MANAGED_PACKAGES);
 			loadObjects();
 			if (getPropertyBoolean(SF_INCLUDE_ACTION_OVERRIDES) || getPropertyBoolean(SF_INCLUDE_BUSINESS_PROCESSES) ||
 					getPropertyBoolean(SF_INCLUDE_COMPACT_LAYOUTS) || getPropertyBoolean(SF_INCLUDE_CUSTOM_FIELDS) ||

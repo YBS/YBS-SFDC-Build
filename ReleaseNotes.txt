@@ -1,6 +1,16 @@
 YBS Build Release Notes
 -----------------------
 
+v37.2:
+    - Added more objects (applications, tabs, etc...) to include from Managed Packages
+      if the sf.includeManagedPackages property is set.  This allows those objects
+      to have their profile settings managed through the build.
+    
+    - Updated layout retrieve to use list metadata to allow non-object layouts like 
+      CaseClosed to be managed.
+      
+    - Added documentObjectTranslations target to document the translation overrides.
+
 v37.1:
     - Included new "sf.includeManagedPackages" setting in salesforce.properties to
       control whether managed package components should be included (defaults to false).
