@@ -16,7 +16,12 @@ v37.3:
             sf.includeReportsFolders
             sf.includeEmailsFolders
 
-    - Updated folders based metadata calls to support managed packages.
+    - Updated folders based metadata calls to support managed packages, however this only
+      works for retrieves and not deploys.  Salesforce does not allow you create new
+      components in a different namespace so you cannot use this process to move
+      managed package components.  However, you should be able to move components added to
+      a managed package folder that are not in the managed package namespace (i.e. components
+      that you added to a managed package folder) - however, this has not been tested.
       
 v37.2:
     - Added more objects (applications, tabs, etc...) to include from Managed Packages
