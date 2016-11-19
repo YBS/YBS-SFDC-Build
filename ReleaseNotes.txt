@@ -1,6 +1,23 @@
 YBS Build Release Notes
 -----------------------
 
+v37.3:
+    - Replaced "sf.includeManagedPackages" true/false setting with new 
+      "sf.includeManagedPackageTypes" setting as a semi-colon delimited list of
+      metadata types to include for managed packages.  Here is a sample of how it can
+      be used:
+        sf.includeManagedPackageTypes=ApexPage;CustomObject;CustomField;RecordType;CustomApplication;CustomTab;Document
+        
+    - Added new sf.includeXXXFolders properties to allow a semi-colon delimited list of
+      folder API names to be used to specify a list of folders instead of using just a
+      Prefix.  Here are the new properties:
+            sf.includeDocumentsFolders
+            sf.includeDashboardsFolders
+            sf.includeReportsFolders
+            sf.includeEmailsFolders
+
+    - Updated folders based metadata calls to support managed packages.
+      
 v37.2:
     - Added more objects (applications, tabs, etc...) to include from Managed Packages
       if the sf.includeManagedPackages property is set.  This allows those objects

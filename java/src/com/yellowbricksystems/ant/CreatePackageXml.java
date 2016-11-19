@@ -63,17 +63,17 @@ import com.sforce.soap.tooling.sobject.RecordType;
 
 public class CreatePackageXml extends SalesforceTask {
 
-	public static final String BUILD_VERSION = "37.2";
+	public static final String BUILD_VERSION = "37.3";
 	
 	public static final String SF_IGNORE_PREFIX = "sf.ignore";
 
 	protected String packageFileName;
 	
-	protected Boolean includeManagedPackages = false;
-
 	protected Map<String, List<String>> typesMap = new HashMap<String, List<String>>();
 
 	protected HashSet<String> ignoreList = new HashSet<String>();
+	
+	protected HashSet<String> managedPackageTypes = new HashSet<String>();
 	
 	// Object related collections
 	protected List<String> objectNames = new ArrayList<String>();
@@ -91,7 +91,8 @@ public class CreatePackageXml extends SalesforceTask {
 	@Override
 	public void init() throws BuildException {
 		loadIgnoreValues();
-
+		loadManagedPackageTypes();
+		
 		super.init();
 	}
 
@@ -115,8 +116,6 @@ public class CreatePackageXml extends SalesforceTask {
 			
 			initSalesforceConnection();
 			
-			// Initial types should not include any managed package records
-			includeManagedPackages = false;
 			// Apex Types
 			addToolingType(SF_INCLUDE_CLASSES, "ApexClass");
 			addToolingType(SF_INCLUDE_COMPONENTS, "ApexComponent");
@@ -140,7 +139,6 @@ public class CreatePackageXml extends SalesforceTask {
 			// App Types
 			// The following block of objects work ok for Managed Packages, so bring them
 			// into the build, if required
-			includeManagedPackages = getPropertyBoolean(SF_INCLUDE_MANAGED_PACKAGES);
 			addType(SF_INCLUDE_APP_MENUS, "AppMenu");
 			addType(SF_INCLUDE_CONNECTED_APPS, "ConnectedApp");
 			addType(SF_INCLUDE_APPLICATIONS, "CustomApplication");
@@ -148,8 +146,8 @@ public class CreatePackageXml extends SalesforceTask {
 			addType(SF_INCLUDE_LABELS, "CustomLabel");
 			addType(SF_INCLUDE_CUSTOM_PAGE_WEBLINKS, "CustomPageWebLink");
 			addType(SF_INCLUDE_TABS, "CustomTab");
-			addFolderType(SF_INCLUDE_DOCUMENTS, SF_INCLUDE_DOCUMENTS_FOLDER_PREFIX, null,
-					"Document", "Document", "FolderId");
+			addFolderType(SF_INCLUDE_DOCUMENTS, SF_INCLUDE_DOCUMENTS_FOLDER_PREFIX, SF_INCLUDE_DOCUMENTS_FOLDERS, 
+					null, "Document", "Document", "FolderId");
 			addType(SF_INCLUDE_HOME_PAGE_COMPONENTS, "HomePageComponent");
 			addType(SF_INCLUDE_HOME_PAGE_LAYOUTS, "HomePageLayout");
 			addType(SF_INCLUDE_INSTALLED_PACKAGES, "InstalledPackage");
@@ -175,10 +173,6 @@ public class CreatePackageXml extends SalesforceTask {
 				// fields still come back in the query and cannot be filtered
 				//addObjectToolingType(SF_INCLUDE_CUSTOM_FIELDS, "CustomField");
 				addType(SF_INCLUDE_RECORD_TYPES, "RecordType");
-				// The following objects don't properly support managed package
-				// retrieves, so don't allow the managed package components to be
-				// included for now
-				includeManagedPackages = false;
 				addType(SF_INCLUDE_BUSINESS_PROCESSES, "BusinessProcess");
 				addType(SF_INCLUDE_FIELD_SETS, "FieldSet");
 				addType(SF_INCLUDE_LIST_VIEWS, "ListView", SF_INCLUDE_LIST_VIEWS_PREFIX);
@@ -186,8 +180,6 @@ public class CreatePackageXml extends SalesforceTask {
 				addType(SF_INCLUDE_VALIDATION_RULES, "ValidationRule");
 				addType(SF_INCLUDE_WEBLINKS, "WebLink");
 			}
-			// Finished objects, so exclude managed packages
-			includeManagedPackages = false;
 			
 			addType(SF_INCLUDE_OBJECT_TRANSLATIONS, "CustomObjectTranslation");
 			addType(SF_INCLUDE_EXTERNAL_DATA_SOURCES, "ExternalDataSource");
@@ -197,10 +189,10 @@ public class CreatePackageXml extends SalesforceTask {
 
 			// Reporting
 			addType(SF_INCLUDE_ANALYTIC_SNAPSHOTS, "AnalyticSnapshot");
-			addFolderType(SF_INCLUDE_DASHBOARDS, SF_INCLUDE_DASHBOARDS_FOLDER_PREFIX, null,
-					"Dashboard", "Dashboard", "FolderId");
-			addFolderType(SF_INCLUDE_REPORTS, SF_INCLUDE_REPORTS_FOLDER_PREFIX, SF_INCLUDE_REPORTS_UNFILED_PUBLIC,
-					"Report", "Report", "OwnerId");
+			addFolderType(SF_INCLUDE_DASHBOARDS, SF_INCLUDE_DASHBOARDS_FOLDER_PREFIX, SF_INCLUDE_DASHBOARDS_FOLDERS, 
+					null, "Dashboard", "Dashboard", "FolderId");
+			addFolderType(SF_INCLUDE_REPORTS, SF_INCLUDE_REPORTS_FOLDER_PREFIX, SF_INCLUDE_REPORTS_FOLDERS, 
+					SF_INCLUDE_REPORTS_UNFILED_PUBLIC, "Report", "Report", "OwnerId");
 			addType(SF_INCLUDE_REPORT_TYPES, "ReportType");
 
 
@@ -311,8 +303,8 @@ public class CreatePackageXml extends SalesforceTask {
 			addType(SF_INCLUDE_APPROVAL_PROCESSES, "ApprovalProcess");
 			addType(SF_INCLUDE_ASSIGNMENT_RULES, "AssignmentRule");
 			addType(SF_INCLUDE_AUTO_RESPONSE_RULES, "AutoResponseRules");
-			addFolderType(SF_INCLUDE_EMAILS, SF_INCLUDE_EMAILS_FOLDER_PREFIX, SF_INCLUDE_EMAILS_UNFILED_PUBLIC,
-					"Email", "EmailTemplate", "FolderId");
+			addFolderType(SF_INCLUDE_EMAILS, SF_INCLUDE_EMAILS_FOLDER_PREFIX, SF_INCLUDE_EMAILS_FOLDERS, 
+					SF_INCLUDE_EMAILS_UNFILED_PUBLIC, "Email", "EmailTemplate", "FolderId");
 			addType(SF_INCLUDE_LETTERHEADS, "Letterhead");
 			addType(SF_INCLUDE_POST_TEMPLATES, "PostTemplate");
 			addType(SF_INCLUDE_WORKFLOWS, "Workflow"); // Backwards compatibility
@@ -354,7 +346,7 @@ public class CreatePackageXml extends SalesforceTask {
 			FileProperties[] properties = metaConnection.listMetadata(new ListMetadataQuery[] {query}, asOfVersion);
 			for (FileProperties p : properties) {
 				String namespace = p.getNamespacePrefix();
-				if (includeManagedPackages || namespace == null || namespace.trim().length() == 0) {
+				if (managedPackageTypes.contains(typeName) || namespace == null || namespace.trim().length() == 0) {
 					String fullName = p.getFullName();
 					String matchName = fullName;
 					String[] splitNames = fullName.split("\\.");
@@ -409,7 +401,7 @@ public class CreatePackageXml extends SalesforceTask {
 			FileProperties[] properties = metadataConnection.listMetadata(new ListMetadataQuery[] {query}, asOfVersion);
 			for (FileProperties p : properties) {
 				String namespace = p.getNamespacePrefix();
-				if (includeManagedPackages || namespace == null || namespace.trim().length() == 0) {
+				if (managedPackageTypes.contains("CustomObject") || namespace == null || namespace.trim().length() == 0) {
 					String objectName = p.getFullName();
 					String objectEnumId = p.getId();
 					if (!objectName.endsWith("__c")) {
@@ -463,7 +455,7 @@ public class CreatePackageXml extends SalesforceTask {
 						tableEnumOrId = ((Layout) so).getTableEnumOrId();
 						namespace = ((Layout)so).getNamespacePrefix();
 					}
-					if (includeManagedPackages || namespace == null || namespace.trim().length() == 0) {
+					if (managedPackageTypes.contains(typeName) || namespace == null || namespace.trim().length() == 0) {
 						if (tableEnumOrId != null) {
 							List<com.sforce.soap.tooling.sobject.SObject> objects = objectResultMap.get(tableEnumOrId);
 							if (objects == null) {
@@ -572,7 +564,7 @@ public class CreatePackageXml extends SalesforceTask {
 		try {
 			long startTime = System.nanoTime();
 			String query = "select Id, Name, NamespacePrefix from " + typeName;
-			if (includeManagedPackages) {
+			if (managedPackageTypes.contains(typeName)) {
 				query += " order by Name";
 			} else {
 				query += " where NamespacePrefix = null order by Name";
@@ -623,26 +615,42 @@ public class CreatePackageXml extends SalesforceTask {
 		}
 	}
 	
-	protected void addFolderType(String includePropertyName, String includeFolderPrefixPropertyName,
+	protected void addFolderType(String includePropertyName, String includeFolderPrefixPropertyName, String includeFoldersPropertyName,
 			String includeUnfiledPublicPropertyName, String folderType, String objectName, String objectFolderFieldName) throws IOException {
 		if (getPropertyBoolean(includePropertyName)) {
 			try {
 				long startTime = System.nanoTime();
 				PartnerConnection connection = getPartnerConnection();
-
+				
+				HashSet<String> includeFolders = new HashSet<String>();
+				String includeFoldersProperty = getProject().getProperty(includeFoldersPropertyName);
+				if (includeFoldersProperty != null && includeFoldersProperty.trim().length() > 0) {
+					for (String folder : includeFoldersProperty.split(";")) {
+						includeFolders.add(folder);
+					}
+				}
+				
 				String folderPrefix = getProject().getProperty(includeFolderPrefixPropertyName);
-				SObject[] folders = getFolders(folderType, folderPrefix);
+				SObject[] folders = getFolders(folderType, folderPrefix, includeFolders);
 				for (SObject folder : folders) {
 					String folderId = folder.getId();
 					String folderName = (String) folder.getField("DeveloperName");
+					String folderNamespacePrefix = (String) folder.getField("NamespacePrefix");
+					if (folderNamespacePrefix != null && folderNamespacePrefix.trim().length() > 0) {
+						folderName = folderNamespacePrefix + "__" + folderName;
+					}
 					addTypeMember(objectName, folderName);
 
-					String soql = "select Id, DeveloperName from " + objectName + " where " +
+					String soql = "select Id, DeveloperName, NamespacePrefix from " + objectName + " where " +
 							objectFolderFieldName + "='" + folderId + "' ";
 					QueryResult qr = connection.query(soql);
 					SObject[] sobjects = qr.getRecords();
 					for (SObject so : sobjects) {
 						String developerName = (String) so.getField("DeveloperName");
+						String namespacePrefix = (String) so.getField("NamespacePrefix");
+						if (namespacePrefix != null && namespacePrefix.trim().length() > 0) {
+							developerName = namespacePrefix + "__" + developerName;
+						}
 						addTypeMember(objectName, folderName + "/" + developerName);
 					}
 				}
@@ -668,21 +676,28 @@ public class CreatePackageXml extends SalesforceTask {
 		}
 	}
 
-	protected SObject[] getFolders(String folderType, String folderPrefix) {
+	protected SObject[] getFolders(String folderType, String folderPrefix, HashSet<String> includeFolders) {
 		SObject[] folders = new SObject[] {};
 
 		try {
-			String soql = "select Id, DeveloperName from Folder where NamespacePrefix = null AND DeveloperName != null " +
+			String soql = "select Id, DeveloperName, NamespacePrefix from Folder where DeveloperName != null " +
 					" and Type='" + folderType + "' ";
-
+			if (!managedPackageTypes.contains(folderType)) {
+				soql += " AND NamespacePrefix = null ";
+			}
 			PartnerConnection connection = getPartnerConnection();
 			QueryResult qr = connection.query(soql);
 			SObject[] soqlFolders = qr.getRecords();
 			List<SObject> approvedFolders = new ArrayList<SObject>();
 			for (SObject so : soqlFolders) {
 				String developerName = (String) so.getField("DeveloperName");
-				if (folderPrefix == null || folderPrefix.length() == 0 ||
-						(developerName != null && developerName.startsWith(folderPrefix))) {
+				String namespacePrefix = (String) so.getField("NamespacePrefix");
+				if (namespacePrefix != null && namespacePrefix.trim().length() > 0) {
+					developerName = namespacePrefix + "__" + developerName;
+				}
+				if (((folderPrefix == null || folderPrefix.length() == 0) && includeFolders.size() == 0) ||
+						includeFolders.contains(developerName) ||
+						(folderPrefix != null && folderPrefix.length() > 0 && developerName != null && developerName.startsWith(folderPrefix))) {
 					approvedFolders.add(so);
 				}
 			}
@@ -712,7 +727,19 @@ public class CreatePackageXml extends SalesforceTask {
 			}
 		}
 	}
-
+	
+	protected void loadManagedPackageTypes() {
+		managedPackageTypes.clear();
+		
+		String managedPackageTypesProperty = getProject().getProperty(SF_INCLUDE_MANAGED_PACKAGE_TYPES);
+		if (managedPackageTypesProperty != null && managedPackageTypesProperty.trim().length() > 0) {
+			for (String type : managedPackageTypesProperty.split(";")) {
+				managedPackageTypes.add(type);
+			}
+		}
+		
+	}
+	
 	/**
 	 * @param args
 	 */

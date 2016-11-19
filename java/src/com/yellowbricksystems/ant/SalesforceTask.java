@@ -53,7 +53,7 @@ public class SalesforceTask extends Task {
 	// Property Names for salesforce.properties file to control metadata that is
 	// retrieved/deployed
 	
-	public static final String SF_INCLUDE_MANAGED_PACKAGES = "sf.includeManagedPackages";
+	public static final String SF_INCLUDE_MANAGED_PACKAGE_TYPES = "sf.includeManagedPackageTypes";
 	
 	// Apex
 	public static final String SF_INCLUDE_CLASSES = "sf.includeClasses";
@@ -76,6 +76,7 @@ public class SalesforceTask extends Task {
 	public static final String SF_INCLUDE_TABS = "sf.includeTabs";
 	public static final String SF_INCLUDE_DOCUMENTS = "sf.includeDocuments";
 	public static final String SF_INCLUDE_DOCUMENTS_FOLDER_PREFIX = "sf.includeDocumentsFolderPrefix";
+	public static final String SF_INCLUDE_DOCUMENTS_FOLDERS = "sf.includeDocumentsFolders";
 	public static final String SF_INCLUDE_CUSTOM_PAGE_WEBLINKS = "sf.includeCustomPageWeblinks";
 	public static final String SF_INCLUDE_HOME_PAGE_COMPONENTS = "sf.includeHomePageComponents";
 	public static final String SF_INCLUDE_HOME_PAGE_LAYOUTS = "sf.includeHomePageLayouts";
@@ -107,8 +108,10 @@ public class SalesforceTask extends Task {
 	public static final String SF_INCLUDE_ANALYTIC_SNAPSHOTS = "sf.includeAnalyticSnapshots";
 	public static final String SF_INCLUDE_DASHBOARDS = "sf.includeDashboards";
 	public static final String SF_INCLUDE_DASHBOARDS_FOLDER_PREFIX = "sf.includeDashboardsFolderPrefix";
+	public static final String SF_INCLUDE_DASHBOARDS_FOLDERS = "sf.includeDashboardsFolders";
 	public static final String SF_INCLUDE_REPORTS = "sf.includeReports";
 	public static final String SF_INCLUDE_REPORTS_FOLDER_PREFIX = "sf.includeReportsFolderPrefix";
+	public static final String SF_INCLUDE_REPORTS_FOLDERS = "sf.includeReportsFolders";
 	public static final String SF_INCLUDE_REPORTS_UNFILED_PUBLIC = "sf.includeReportsUnfiledPublic";
 	public static final String SF_INCLUDE_REPORT_TYPES = "sf.includeReportTypes";
 	
@@ -177,6 +180,7 @@ public class SalesforceTask extends Task {
 	public static final String SF_INCLUDE_AUTO_RESPONSE_RULES = "sf.includeAutoResponseRules";
 	public static final String SF_INCLUDE_EMAILS = "sf.includeEmails";
 	public static final String SF_INCLUDE_EMAILS_FOLDER_PREFIX = "sf.includeEmailsFolderPrefix";
+	public static final String SF_INCLUDE_EMAILS_FOLDERS = "sf.includeEmailsFolders";
 	public static final String SF_INCLUDE_EMAILS_UNFILED_PUBLIC = "sf.includeEmailsUnfiledPublic";
 	public static final String SF_INCLUDE_LETTERHEADS = "sf.includeLetterheads";
 	public static final String SF_INCLUDE_POST_TEMPLATES = "sf.includePostTemplates";
