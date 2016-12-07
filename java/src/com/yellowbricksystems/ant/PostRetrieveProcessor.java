@@ -214,8 +214,11 @@ public class PostRetrieveProcessor extends SalesforceTask {
 													String fieldName = fullName.split("\\.")[1];
 													fullName = "Activity." + fieldName;
 												}
-												// Remove Custom Fields that are not in the package.xml
-												if (!packageCustomFields.contains(fullName) && fullName.endsWith("__c")) {
+												// Remove Custom Fields that are not in the package.xml or standard
+												// fields that are explicitly ignored
+												String ignoreName = "CustomField." + fullName;
+												if ((!packageCustomFields.contains(fullName) && fullName.endsWith("__c")) ||
+														ignoreList.contains(ignoreName)) {
 													removeNodes.add(customFieldNode);
 												}
 											}
@@ -316,8 +319,11 @@ public class PostRetrieveProcessor extends SalesforceTask {
 													String fieldName = fullName.split("\\.")[1];
 													fullName = "Activity." + fieldName;
 												}
-												// Remove Custom Fields that are not in the package.xml
-												if (!packageCustomFields.contains(fullName) && fullName.endsWith("__c")) {
+												// Remove Custom Fields that are not in the package.xml or standard
+												// fields that are explicitly ignored
+												String ignoreName = "CustomField." + fullName;
+												if ((!packageCustomFields.contains(fullName) && fullName.endsWith("__c")) ||
+														ignoreList.contains(ignoreName)) {
 													removeNodes.add(customFieldNode);
 												}
 											}
@@ -427,8 +433,11 @@ public class PostRetrieveProcessor extends SalesforceTask {
 												String fieldName = fullName.split("\\.")[1];
 												fullName = "Activity." + fieldName;
 											}
-											// Remove Custom Fields that are not in the package.xml
-											if (!packageCustomFields.contains(fullName) && fullName.endsWith("__c")) {
+											// Remove Custom Fields that are not in the package.xml or standard
+											// fields that are explicitly ignored
+											String ignoreName = "CustomField." + fullName;
+											if ((!packageCustomFields.contains(fullName) && fullName.endsWith("__c")) ||
+													ignoreList.contains(ignoreName)) {
 												removeNodes.add(customFieldNode);
 											}
 										}

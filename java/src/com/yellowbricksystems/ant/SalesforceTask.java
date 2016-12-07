@@ -28,6 +28,8 @@ SOFTWARE.
  */
 package com.yellowbricksystems.ant;
 
+import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.tools.ant.BuildException;
@@ -50,6 +52,12 @@ public class SalesforceTask extends Task {
 	
 	protected double asOfVersion = 37.0;
 
+	public static final String SF_IGNORE_PREFIX = "sf.ignore";
+
+	protected HashSet<String> ignoreList = new HashSet<String>();
+	
+	protected HashSet<String> managedPackageTypes = new HashSet<String>();
+	
 	// Property Names for salesforce.properties file to control metadata that is
 	// retrieved/deployed
 	
@@ -217,6 +225,9 @@ public class SalesforceTask extends Task {
 
 	@Override
 	public void init() throws BuildException {
+		loadIgnoreValues();
+		loadManagedPackageTypes();
+		
 		super.init();
 	}
 	
@@ -236,6 +247,36 @@ public class SalesforceTask extends Task {
 			propertyBoolean = true;
 		}
 		return propertyBoolean;
+	}
+	
+	protected void loadIgnoreValues() {
+		ignoreList.clear();
+
+		@SuppressWarnings("unchecked")
+		Hashtable<String, String> projectProperties = (Hashtable<String, String>) getProject().getProperties();
+		for (String propertyKey : projectProperties.keySet()) {
+			if (propertyKey != null && propertyKey.startsWith(SF_IGNORE_PREFIX)) {
+				// This is an ignore property
+				String ignoreProperty = projectProperties.get(propertyKey);
+				if (ignoreProperty != null && ignoreProperty.trim().length() > 0) {
+					for (String ignore : ignoreProperty.split(";")) {
+						ignoreList.add(ignore);
+					}
+				}
+			}
+		}
+	}
+	
+	protected void loadManagedPackageTypes() {
+		managedPackageTypes.clear();
+		
+		String managedPackageTypesProperty = getProject().getProperty(SF_INCLUDE_MANAGED_PACKAGE_TYPES);
+		if (managedPackageTypesProperty != null && managedPackageTypesProperty.trim().length() > 0) {
+			for (String type : managedPackageTypesProperty.split(";")) {
+				managedPackageTypes.add(type);
+			}
+		}
+		
 	}
 	
 	protected void initSalesforceConnection() {

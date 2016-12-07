@@ -63,17 +63,11 @@ import com.sforce.soap.tooling.sobject.RecordType;
 
 public class CreatePackageXml extends SalesforceTask {
 
-	public static final String BUILD_VERSION = "37.3";
+	public static final String BUILD_VERSION = "37.4";
 	
-	public static final String SF_IGNORE_PREFIX = "sf.ignore";
-
 	protected String packageFileName;
 	
 	protected Map<String, List<String>> typesMap = new HashMap<String, List<String>>();
-
-	protected HashSet<String> ignoreList = new HashSet<String>();
-	
-	protected HashSet<String> managedPackageTypes = new HashSet<String>();
 	
 	// Object related collections
 	protected List<String> objectNames = new ArrayList<String>();
@@ -90,9 +84,6 @@ public class CreatePackageXml extends SalesforceTask {
 
 	@Override
 	public void init() throws BuildException {
-		loadIgnoreValues();
-		loadManagedPackageTypes();
-		
 		super.init();
 	}
 
@@ -710,36 +701,6 @@ public class CreatePackageXml extends SalesforceTask {
 		return folders;
 	}
 
-	protected void loadIgnoreValues() {
-		ignoreList.clear();
-
-		@SuppressWarnings("unchecked")
-		Hashtable<String, String> projectProperties = (Hashtable<String, String>) getProject().getProperties();
-		for (String propertyKey : projectProperties.keySet()) {
-			if (propertyKey != null && propertyKey.startsWith(SF_IGNORE_PREFIX)) {
-				// This is an ignore property
-				String ignoreProperty = projectProperties.get(propertyKey);
-				if (ignoreProperty != null && ignoreProperty.trim().length() > 0) {
-					for (String ignore : ignoreProperty.split(";")) {
-						ignoreList.add(ignore);
-					}
-				}
-			}
-		}
-	}
-	
-	protected void loadManagedPackageTypes() {
-		managedPackageTypes.clear();
-		
-		String managedPackageTypesProperty = getProject().getProperty(SF_INCLUDE_MANAGED_PACKAGE_TYPES);
-		if (managedPackageTypesProperty != null && managedPackageTypesProperty.trim().length() > 0) {
-			for (String type : managedPackageTypesProperty.split(";")) {
-				managedPackageTypes.add(type);
-			}
-		}
-		
-	}
-	
 	/**
 	 * @param args
 	 */

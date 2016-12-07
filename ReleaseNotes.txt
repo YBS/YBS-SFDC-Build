@@ -1,6 +1,10 @@
 YBS Build Release Notes
 -----------------------
 
+v37.4:
+    - Updated filtering of Custom Fields to allow standard fields to be ignored and
+      removed from the build.
+      
 v37.3:
     - Replaced "sf.includeManagedPackages" true/false setting with new 
       "sf.includeManagedPackageTypes" setting as a semi-colon delimited list of
