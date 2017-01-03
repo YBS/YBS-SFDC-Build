@@ -1,6 +1,14 @@
 YBS Build Release Notes
 -----------------------
 
+v37.5:
+    - Updated deploy and testDeploy to use new testLevel property instead of old
+      runAllTests property to give better control on which tests to run.  The following
+      files were updated with this version:  YBS-ant.jar (for BUILD_VERSION), build.xml,
+      and samplelogin.properties.
+        - Replace the runTests=false with testLevel=NoTestRun in all login.properties
+          files to keep the same behavior
+      
 v37.4:
     - Updated filtering of Custom Fields to allow standard fields to be ignored and
       removed from the build.

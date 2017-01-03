@@ -63,7 +63,7 @@ import com.sforce.soap.tooling.sobject.RecordType;
 
 public class CreatePackageXml extends SalesforceTask {
 
-	public static final String BUILD_VERSION = "37.4";
+	public static final String BUILD_VERSION = "37.5";
 	
 	protected String packageFileName;
 	

@@ -52,8 +52,8 @@ SOFTWARE.
 	<property name="xsl.dir" value="${basedir}/xsl"/>
 	<property name="doc.dir" value="${basedir}/doc"/>
 	
-	<!--  Default runAllTests to false if it was not set in the property files  -->
-	<property name="runAllTests" value="false"/>
+	<!--  Default testLevel to false if it was not set in the property files  -->
+	<property name="testLevel" value="NoTestRun"/>
 	
 	<!-- Initialize project -->
 	<target name="init">
@@ -253,7 +253,7 @@ SOFTWARE.
 			serverurl="${sf.serverurl}" 
 			deployRoot="${deploy.dir}" 
 			rollbackOnError="true"
-			runAllTests="${runAllTests}"
+			testLevel="${testLevel}"
 			pollWaitMillis="30000"
 			maxPoll="60"/>
 	</target>
@@ -274,7 +274,7 @@ SOFTWARE.
 			deployRoot="${deploy.dir}" 
 			checkOnly="true"
 			rollbackOnError="true"
-			runAllTests="${runAllTests}"
+			testLevel="${testLevel}"
 			pollWaitMillis="30000"
 			maxPoll="60"/>
 	</target>
