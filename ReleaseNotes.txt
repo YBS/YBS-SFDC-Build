@@ -1,6 +1,11 @@
 YBS Build Release Notes
 -----------------------
 
+v37.6:
+    - Updated PermissionSet retrieve to use SOQL in order to filter out Managed Package
+      Permission Sets that began to appear after Spring '17 release.
+      Only the YBS-ant.jar needs to be updated for this version update.
+          
 v37.5:
     - Updated deploy and testDeploy to use new testLevel property instead of old
       runAllTests property to give better control on which tests to run.  The following

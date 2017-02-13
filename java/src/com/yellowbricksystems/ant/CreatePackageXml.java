@@ -63,7 +63,9 @@ import com.sforce.soap.tooling.sobject.RecordType;
 
 public class CreatePackageXml extends SalesforceTask {
 
-	public static final String BUILD_VERSION = "37.5";
+	public static final String BUILD_VERSION = "37.6";
+	
+	public static final String PERMISSION_SET_QUERY = "select Id,Name,NamespacePrefix from PermissionSet where ProfileId = null order by NamespacePrefix, Name";
 	
 	protected String packageFileName;
 	
@@ -189,7 +191,7 @@ public class CreatePackageXml extends SalesforceTask {
 
 			// Security/Admin Related
 			addType(SF_INCLUDE_PROFILES, "Profile", SF_INCLUDE_PROFILES_PREFIX);
-			addType(SF_INCLUDE_PERMISSION_SETS, "PermissionSet");
+			addQueryType(SF_INCLUDE_PERMISSION_SETS, "PermissionSet", PERMISSION_SET_QUERY);
 			addType(SF_INCLUDE_ROLES, "Role");
 			addType(SF_INCLUDE_GROUPS, "Group");
 			addType(SF_INCLUDE_QUEUES, "Queue");
@@ -379,6 +381,63 @@ public class CreatePackageXml extends SalesforceTask {
 		}
 	}
 	
+	protected void addQueryType(String propertyName, String typeName, String query) throws IOException{
+		addQueryType(propertyName, typeName, query, null);
+	}
+
+	protected void addQueryType(String propertyName, String typeName, String query, String memberPrefixPropertyName) throws IOException{
+		String memberPrefix = null;
+		if (memberPrefixPropertyName != null) {
+			memberPrefix = getProject().getProperty(memberPrefixPropertyName);
+		}
+
+		if (getPropertyBoolean(propertyName)) {
+			addTypeFromQuery(typeName, memberPrefix, query);
+		}
+	}
+	
+	protected void addTypeFromQuery(String typeName, String memberPrefix, String query) throws IOException {
+		try {
+			long startTime = System.nanoTime();
+			Boolean done = false;
+			com.sforce.soap.partner.QueryResult qr = partnerConnection.query(query);
+			while (!done) {
+				com.sforce.soap.partner.sobject.SObject[] records = qr.getRecords();
+				for (com.sforce.soap.partner.sobject.SObject so : records) {
+					String name = null;
+					String namespacePrefix = null;
+					if (typeName.equals("PermissionSet")) {
+						name = (String) so.getField("Name");
+						namespacePrefix = (String) so.getField("NamespacePrefix");
+					}
+					if (name != null) {
+						if (managedPackageTypes.contains(typeName) || namespacePrefix == null || namespacePrefix.trim().length() == 0) {
+							String fullName = name;
+							if (namespacePrefix != null && namespacePrefix.trim().length() > 0) {
+								fullName = namespacePrefix + "__" + name;
+							}
+							String matchName = fullName;
+							if (memberPrefix == null || memberPrefix.trim().length() == 0 ||
+									matchName.startsWith(memberPrefix)) {
+								addTypeMember(typeName, fullName);
+							}
+						}
+					}
+				}
+				if (qr.isDone()) {
+					done = true;
+				} else {
+					qr = partnerConnection.queryMore(qr.getQueryLocator());
+				}
+			}
+			long elapsedTime = System.nanoTime() - startTime;
+			log("Added " + typeName + " from SOQL query [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new BuildException("Exception trying to add " + typeName + " components.");
+		}
+	}
+
 	protected void loadObjects() {
 		try {
 			long startTime = System.nanoTime();
