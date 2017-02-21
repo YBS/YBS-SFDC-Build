@@ -63,7 +63,7 @@ import com.sforce.soap.tooling.sobject.RecordType;
 
 public class CreatePackageXml extends SalesforceTask {
 
-	public static final String BUILD_VERSION = "37.6";
+	public static final String BUILD_VERSION = "37.7";
 	
 	public static final String PERMISSION_SET_QUERY = "select Id,Name,NamespacePrefix from PermissionSet where ProfileId = null order by NamespacePrefix, Name";
 	
@@ -75,6 +75,8 @@ public class CreatePackageXml extends SalesforceTask {
 	protected List<String> objectNames = new ArrayList<String>();
 	// Object API Name => TableEnumOrId
 	protected Map<String, String> objectNameEnumIdMap = new HashMap<String, String>();
+	// Object API Name => Namespace
+	protected Map<String, String> objectNamespaceMap = new HashMap<String, String>();
 	
 	public String getPackageFileName() {
 		return packageFileName;
@@ -218,70 +220,70 @@ public class CreatePackageXml extends SalesforceTask {
 
 			// Settings
 			if (getPropertyBoolean(SF_INCLUDE_ACCOUNT_SETTINGS)) {
-				addTypeMember("Settings", "Account");
+				addTypeMember("Settings", "Account", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_ACTIVITIES_SETTINGS)) {
-				addTypeMember("Settings", "Activities");
+				addTypeMember("Settings", "Activities", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_ADDRESS_SETTINGS)) {
-				addTypeMember("Settings", "Address");
+				addTypeMember("Settings", "Address", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_BUSINESS_HOURS_SETTINGS)) {
-				addTypeMember("Settings", "BusinessHours");
+				addTypeMember("Settings", "BusinessHours", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_CASE_SETTINGS)) {
-				addTypeMember("Settings", "Case");
+				addTypeMember("Settings", "Case", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_CHATTER_ANSWERS_SETTINGS)) {
-				addTypeMember("Settings", "ChatterAnswersSettings");
+				addTypeMember("Settings", "ChatterAnswersSettings", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_COMPANY_SETTINGS)) {
-				addTypeMember("Settings", "Company");
+				addTypeMember("Settings", "Company", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_CONTRACT_SETTINGS)) {
-				addTypeMember("Settings", "Contract");
+				addTypeMember("Settings", "Contract", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_ENTITLEMENT_SETTINGS)) {
-				addTypeMember("Settings", "Entitlement");
+				addTypeMember("Settings", "Entitlement", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_FORECASTING_SETTINGS)) {
-				addTypeMember("Settings", "Forecasting");
+				addTypeMember("Settings", "Forecasting", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_IDEAS_SETTINGS)) {
-				addTypeMember("Settings", "Ideas");
+				addTypeMember("Settings", "Ideas", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_KNOWLEDGE_SETTINGS)) {
-				addTypeMember("Settings", "Knowledge");
+				addTypeMember("Settings", "Knowledge", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_LEAD_CONVERT_SETTINGS)) {
-				addTypeMember("Settings", "LeadConvert");
+				addTypeMember("Settings", "LeadConvert", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_LIVE_AGENT_SETTINGS)) {
-				addTypeMember("Settings", "LiveAgent");
+				addTypeMember("Settings", "LiveAgent", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_MOBILE_SETTINGS)) {
-				addTypeMember("Settings", "Mobile");
+				addTypeMember("Settings", "Mobile", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_NAME_SETTINGS)) {
-				addTypeMember("Settings", "Name");
+				addTypeMember("Settings", "Name", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_OPPORTUNITY_SETTINGS)) {
-				addTypeMember("Settings", "Opportunity");
+				addTypeMember("Settings", "Opportunity", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_ORDER_SETTINGS)) {
-				addTypeMember("Settings", "Order");
+				addTypeMember("Settings", "Order", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_PATH_ASSISTANT_SETTINGS)) {
-				addTypeMember("Settings", "PathAssistant");
+				addTypeMember("Settings", "PathAssistant", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_PRODUCT_SETTINGS)) {
-				addTypeMember("Settings", "Product");
+				addTypeMember("Settings", "Product", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_QUOTE_SETTINGS)) {
-				addTypeMember("Settings", "Quote");
+				addTypeMember("Settings", "Quote", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_SECURITY_SETTINGS)) {
-				addTypeMember("Settings", "Security");
+				addTypeMember("Settings", "Security", null);
 			}
 
 			//Sites
@@ -318,14 +320,16 @@ public class CreatePackageXml extends SalesforceTask {
 		}
 	}
 
-	protected void addTypeMember(String typeName, String memberName) {
+	protected void addTypeMember(String typeName, String memberName, String namespace) {
 		if (!ignoreList.contains(typeName + "." + memberName)) {
-			List<String> memberList = typesMap.get(typeName);
-			if (memberList == null) {
-				memberList = new ArrayList<String>();
-				typesMap.put(typeName, memberList);
+			if (namespace == null || namespace.trim().length() == 0 || !packageIgnoreList.contains(namespace)) {
+				List<String> memberList = typesMap.get(typeName);
+				if (memberList == null) {
+					memberList = new ArrayList<String>();
+					typesMap.put(typeName, memberList);
+				}
+				memberList.add(memberName);
 			}
-			memberList.add(memberName);
 		}
 	}
 
@@ -354,7 +358,7 @@ public class CreatePackageXml extends SalesforceTask {
 					}
 					if (memberPrefix == null || memberPrefix.trim().length() == 0 ||
 							matchName.startsWith(memberPrefix)) {
-						addTypeMember(typeName, fullName);
+						addTypeMember(typeName, fullName, namespace);
 					}
 				}
 			}
@@ -419,7 +423,7 @@ public class CreatePackageXml extends SalesforceTask {
 							String matchName = fullName;
 							if (memberPrefix == null || memberPrefix.trim().length() == 0 ||
 									matchName.startsWith(memberPrefix)) {
-								addTypeMember(typeName, fullName);
+								addTypeMember(typeName, fullName, namespacePrefix);
 							}
 						}
 					}
@@ -445,6 +449,7 @@ public class CreatePackageXml extends SalesforceTask {
 			// Standard and Custom Objects
 			objectNames = new ArrayList<String>();
 			objectNameEnumIdMap = new HashMap<String, String>();
+			objectNamespaceMap = new HashMap<String, String>();
 			ListMetadataQuery query = new ListMetadataQuery();
 			query.setType("CustomObject");
 			
@@ -460,6 +465,7 @@ public class CreatePackageXml extends SalesforceTask {
 					}
 					objectNames.add(objectName);
 					objectNameEnumIdMap.put(objectName,  objectEnumId);
+					objectNamespaceMap.put(objectName,  namespace);
 				}
 			}
 			long elapsedTime = System.nanoTime() - startTime;
@@ -473,7 +479,8 @@ public class CreatePackageXml extends SalesforceTask {
 	
 	protected void addObjects() {
 		for (String objectName : objectNames) {
-			addTypeMember("CustomObject", objectName);
+			String namespace = objectNamespaceMap.get(objectName);
+			addTypeMember("CustomObject", objectName, namespace);
 		}
 	}
 	
@@ -530,9 +537,10 @@ public class CreatePackageXml extends SalesforceTask {
 					if (objects != null) {
 						for (com.sforce.soap.tooling.sobject.SObject so : objects) {
 							String fullName = objectName ;
+							String namespace = null;
 							if (so instanceof CustomField) {
 								CustomField cf = (CustomField) so;
-								String namespace = cf.getNamespacePrefix();
+								namespace = cf.getNamespacePrefix();
 								if (namespace != null && namespace.trim().length() > 0) {
 									fullName += "." + namespace + "__" + cf.getDeveloperName() + "__c";
 								} else {
@@ -541,7 +549,7 @@ public class CreatePackageXml extends SalesforceTask {
 							}
 							if (so instanceof Layout) {
 								Layout l = (Layout) so;
-								String namespace = l.getNamespacePrefix();
+								namespace = l.getNamespacePrefix();
 								if (namespace != null && namespace.trim().length() > 0) {
 									fullName += "-" + namespace + "__" + l.getName();
 								} else {
@@ -550,7 +558,7 @@ public class CreatePackageXml extends SalesforceTask {
 								// Need to encode Layout name since it is not a DeveloperName
 								fullName = encodePackageMember(fullName);
 							}
-							addTypeMember(typeName, fullName);
+							addTypeMember(typeName, fullName, namespace);
 						}
 					}
 				}
@@ -647,7 +655,7 @@ public class CreatePackageXml extends SalesforceTask {
 						String matchName = fullName;
 						if (memberPrefix == null || memberPrefix.trim().length() == 0 ||
 								matchName.startsWith(memberPrefix)) {
-							addTypeMember(typeName, fullName);
+							addTypeMember(typeName, fullName, namespacePrefix);
 						}
 					}
 				}
@@ -689,7 +697,7 @@ public class CreatePackageXml extends SalesforceTask {
 					if (folderNamespacePrefix != null && folderNamespacePrefix.trim().length() > 0) {
 						folderName = folderNamespacePrefix + "__" + folderName;
 					}
-					addTypeMember(objectName, folderName);
+					addTypeMember(objectName, folderName, folderNamespacePrefix);
 
 					String soql = "select Id, DeveloperName, NamespacePrefix from " + objectName + " where " +
 							objectFolderFieldName + "='" + folderId + "' ";
@@ -701,7 +709,7 @@ public class CreatePackageXml extends SalesforceTask {
 						if (namespacePrefix != null && namespacePrefix.trim().length() > 0) {
 							developerName = namespacePrefix + "__" + developerName;
 						}
-						addTypeMember(objectName, folderName + "/" + developerName);
+						addTypeMember(objectName, folderName + "/" + developerName, namespacePrefix);
 					}
 				}
 
@@ -714,7 +722,7 @@ public class CreatePackageXml extends SalesforceTask {
 					SObject[] sobjects = qr.getRecords();
 					for (SObject so : sobjects) {
 						String developerName = (String) so.getField("DeveloperName");
-						addTypeMember(objectName, "unfiled$public/" + developerName);
+						addTypeMember(objectName, "unfiled$public/" + developerName, null);
 					}
 				}
 				long elapsedTime = System.nanoTime() - startTime;

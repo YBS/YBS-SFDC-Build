@@ -53,8 +53,10 @@ public class SalesforceTask extends Task {
 	protected double asOfVersion = 37.0;
 
 	public static final String SF_IGNORE_PREFIX = "sf.ignore";
+	public static final String SF_PACKAGE_IGNORE_PREFIX = "sf.package.ignore";
 
 	protected HashSet<String> ignoreList = new HashSet<String>();
+	protected HashSet<String> packageIgnoreList = new HashSet<String>();
 	
 	protected HashSet<String> managedPackageTypes = new HashSet<String>();
 	
@@ -251,6 +253,7 @@ public class SalesforceTask extends Task {
 	
 	protected void loadIgnoreValues() {
 		ignoreList.clear();
+		packageIgnoreList.clear();
 
 		@SuppressWarnings("unchecked")
 		Hashtable<String, String> projectProperties = (Hashtable<String, String>) getProject().getProperties();
@@ -261,6 +264,15 @@ public class SalesforceTask extends Task {
 				if (ignoreProperty != null && ignoreProperty.trim().length() > 0) {
 					for (String ignore : ignoreProperty.split(";")) {
 						ignoreList.add(ignore);
+					}
+				}
+			}
+			if (propertyKey != null && propertyKey.startsWith(SF_PACKAGE_IGNORE_PREFIX)) {
+				// This is a package ignore property
+				String ignoreProperty = projectProperties.get(propertyKey);
+				if (ignoreProperty != null && ignoreProperty.trim().length() > 0) {
+					for (String ignore : ignoreProperty.split(";")) {
+						packageIgnoreList.add(ignore);
 					}
 				}
 			}

@@ -1,6 +1,13 @@
 YBS Build Release Notes
 -----------------------
 
+v37.7:
+    - Added new 'sf.package.ignore' property prefix to allow specific Managed Packages
+      to be ignored from the build.  Add a semi-colon delimited list of namespace values
+      to ignore them from the build.
+      Only the YBS-ant.jar needs to be updated for this version update along with setting
+      sf.package.ignore property if you want to ignore some packages.
+          
 v37.6:
     - Updated PermissionSet retrieve to use SOQL in order to filter out Managed Package
       Permission Sets that began to appear after Spring '17 release.
