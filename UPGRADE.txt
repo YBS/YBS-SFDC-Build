@@ -1,0 +1,30 @@
+UPGRADE.TXT
+
+This document will list the steps required to update the build process to a new
+API version.
+
+- Get the "current" version of the Force.com WSC project:
+    git clone https://github.com/forcedotcom/wsc.git
+    (May need to git checkout the specific version for the API version you are looking to build)
+
+- Build Force.com WSC Project:
+    mvn clean package -Dgpg.skip
+    
+- Download the correct versions of the following WSDLS:  Partner, Metadata, Tooling
+
+- Build JAR files for each WSDL (replace 43 with correct API version):
+    java -jar target/force-wsc-43.0.0-uber.jar <inputwsdlfile> <outputjarfile>
+
+- Copy JAR files (force-wsc.jar, metadata.jar, partner.jar, tooling.jar) to 
+    java/lib and sfdc/lib directories.
+    
+- Download the latest ant migration tool zip file and extract the files.  Copy the
+    ant-salesforce.jar file to sfdc/lib directory.
+
+- Download the latest Data Loader application and extract the dataloader-XX.jar file
+    and copy it as sfdc/lib/DataLoader.jar.
+
+- Update the java CreatePackageXml.java and SalesforceTask.java and samplelogin.properties
+    to update the build and api version numbers.
+
+- Update the ReleaseNotes.txt with the new build version notes.

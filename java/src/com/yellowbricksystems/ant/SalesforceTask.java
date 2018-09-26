@@ -50,7 +50,7 @@ public class SalesforceTask extends Task {
 	protected MetadataConnection metadataConnection = null;
 	protected ToolingConnection toolingConnection = null;
 	
-	protected double asOfVersion = 37.0;
+	protected double asOfVersion = 43.0;
 
 	public static final String SF_IGNORE_PREFIX = "sf.ignore";
 	public static final String SF_PACKAGE_IGNORE_PREFIX = "sf.package.ignore";

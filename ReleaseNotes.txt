@@ -1,6 +1,9 @@
 YBS Build Release Notes
 -----------------------
 
+v43.0
+    - Updated build to use API version 43.0 (Summer '18)
+
 v37.7:
     - Added new 'sf.package.ignore' property prefix to allow specific Managed Packages
       to be ignored from the build.  Add a semi-colon delimited list of namespace values

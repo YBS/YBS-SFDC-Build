@@ -63,7 +63,7 @@ import com.sforce.soap.tooling.sobject.RecordType;
 
 public class CreatePackageXml extends SalesforceTask {
 
-	public static final String BUILD_VERSION = "37.7";
+	public static final String BUILD_VERSION = "43.0";
 	
 	public static final String PERMISSION_SET_QUERY = "select Id,Name,NamespacePrefix from PermissionSet where ProfileId = null order by NamespacePrefix, Name";
 	
