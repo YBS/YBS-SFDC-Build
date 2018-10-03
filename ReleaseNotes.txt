@@ -3,6 +3,71 @@ YBS Build Release Notes
 
 v43.0
     - Updated build to use API version 43.0 (Summer '18)
+    - Added following Metadata Types/Properties:
+        - Bot / sf.includeBots
+        - BotVersion / sf.includeBotVersions
+        - BrandingSet / sf.includeBrandingSets
+        - CaseSubjectParticle / sf.includeCaseSubjectParticles
+        - Certificate / sf.includeCertificates
+        - ChatterExtension / sf.includeChatterExtensions
+        - CleanDataService / sf.includeCleanDataService
+        - CMSConnectSource / sf.includeCMSConnectSources
+        - CommunityTemplateDefinition / sf.includeCommunityTemplateDefinitions
+        - CommunityThemeDefinition / sf.includeCommunityThemeDefinitions
+        - ContentAsset / sf.includeContentAssets
+        - CorsWhitelistOrigin / sf.includeCORSWhitelistOrigins
+        - CustomFeedFilter / sf.includeCustomFeedFilters
+        - CustomMetadata / sf.includeCustomMetadata
+        - DelegateGroup / sf.includeDelegateGroups
+        - DuplicateRule / sf.includeDuplicateRules
+        - EclairGeoData / sf.includeAnalyticMapCharts
+        - EmailServicesFunction / sf.includeEmailServicesFunctions
+        - EmbeddedServiceBranding / sf.includeEmbeddedServiceBrandings
+        - EmbeddedServiceConfig / sf.includeEmbeddedServiceConfigs
+        - EmbeddedServiceLiveAgent / sf.includeEmbeddedServiceLiveAgents
+        - EntitlementProcess / sf.includeEntitlementProcesses
+        - EventDelivery / sf.includeEventDeliveries
+        - EventSubscription / sf.includeEventSubscriptions
+        - ExternalServiceRegistration / sf.includeExternalServiceRegistrations
+        - FileUploadAndDownloadSecuritySettings / sf.includeFileUploadAndDownloadSecuritySettings
+        - GlobalValueSet / sf.includeGlobalValueSets
+        - GlobalValueSetTranslation / sf.includeGlobalValueSetTranslations
+        - KeywordList / sf.includeKeywordLists
+        - LightningBolt / sf.includeLightningBolts
+        - LiveChatSensitiveDataRule / sf.includeLiveChatSensitiveDataRules
+        - ManagedTopics / sf.includeManagedTopics
+        - MIDomain / sf.includeMIDomains
+        - ModerationRule / sf.includeModerationRules
+        - NetworkBranding / sf.includeNetworkBrandings
+        - OrgPreferenceSettings / sf.includeOrgPreferenceSetting
+        - ProfilePasswordPolicy / sf.includeProfilePasswordPolicies
+        - ProfileSessionSetting / sf.includeSessionSessionSettings
+        - SearchSettings / sf.includeSearchSettings
+        - SocialCustomerServiceSettings / sf.includeSocialCustomerServiceSettings
+        - StandardValueSet / sf.includeStandardValueSets
+        - Territory2 / sf.includeTerritories2
+        - Territory2Model / sf.includeTerritory2Models
+        - Territory2Rule / sf.includeTerritory2Rules
+        - Territory2Type / sf.includeTerritory2Types
+        - Territory2Settings / sf.includeTerritory2Settings
+        - TopicsForObjects / sf.includeTopicsForObjects
+        - TransactionSecurityPolicy / sf.includeTransactionSecurityPolicies
+        - WaveApplication / sf.includeWaveApplications
+        - WaveDashboard / sf.includeWaveDashboards
+        - WaveDataflow / sf.includeWaveDataflows
+        - WaveDataset / sf.includeWaveDatasets
+        - WaveLens / sf.includeWaveLenses
+        - WaveTemplateBundle / sf.includeWaveTemplateBundles
+        - WaveXmd / sf.includeWaveXmds
+        
+    - Removed following Metadata Types/Properties:
+        - ChatterAnswersSettings / sf.includeChatterAnswersSettings
+    
+    - Fixed following Metadata Types/Properties:
+        - LeadConvertSettings / sf.includeLeadConvertSettings
+        - LiveChatButton / sf.includeLiveChatButtons
+        - LiveChatDeployment / sf.includeLiveChatDeployments
+    
 
 v37.7:
     - Added new 'sf.package.ignore' property prefix to allow specific Managed Packages

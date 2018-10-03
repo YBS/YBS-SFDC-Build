@@ -130,6 +130,7 @@ public class CreatePackageXml extends SalesforceTask {
 			addType(SF_INCLUDE_STATIC_RESOURCES, "StaticResource");
 			addType(SF_INCLUDE_AURA_DEFINITION_BUNDLES, "AuraDefinitionBundle");
 			addType(SF_INCLUDE_PLATFORM_CACHE_PARTITIONS, "PlatformCachePartition");
+			addType(SF_INCLUDE_EMAIL_SERVICES_FUNCTIONS, "EmailServicesFunction");
 
 			// App Types
 			// The following block of objects work ok for Managed Packages, so bring them
@@ -147,6 +148,8 @@ public class CreatePackageXml extends SalesforceTask {
 			addType(SF_INCLUDE_HOME_PAGE_LAYOUTS, "HomePageLayout");
 			addType(SF_INCLUDE_INSTALLED_PACKAGES, "InstalledPackage");
 			addType(SF_INCLUDE_TRANSLATIONS, "Translations");
+			addType(SF_INCLUDE_CHATTER_EXTENSIONS, "ChatterExtension");
+			addType(SF_INCLUDE_LIGHTNING_BOLTS, "LightningBolt");
 
 			// Object types
 			// Problem deploying if you break out objects into pieces.  We need to keep the objects whole
@@ -181,6 +184,69 @@ public class CreatePackageXml extends SalesforceTask {
 			addType(SF_INCLUDE_LAYOUTS, "Layout");
 			addType(SF_INCLUDE_PUBLISHER_ACTIONS, "QuickAction");
 			addType(SF_INCLUDE_ACTION_LINK_GROUP_TEMPLATES, "ActionLinkGroupTemplate");
+			addType(SF_INCLUDE_CUSTOM_METADATA, "CustomMetadata");
+			addType(SF_INCLUDE_GLOBAL_VALUE_SETS, "GlobalValueSet");
+			addType(SF_INCLUDE_GLOBAL_VALUE_SET_TRANSLATIONS, "GlobalValueSetTranslation");
+			if (getPropertyBoolean(SF_INCLUDE_STANDARD_VALUE_SETS)) {
+				// Need to hard code Standard picklist values - no retrieve call to get them
+				addTypeMember("StandardValueSet", "AccountContactMultiRoles", null);
+				addTypeMember("StandardValueSet", "AccountContactRole", null);
+				addTypeMember("StandardValueSet", "AccountOwnership", null);
+				addTypeMember("StandardValueSet", "AccountRating", null);
+				addTypeMember("StandardValueSet", "AccountType", null);
+				addTypeMember("StandardValueSet", "AssetStatus", null);
+				addTypeMember("StandardValueSet", "CampaignMemberStatus", null);
+				addTypeMember("StandardValueSet", "CampaignStatus", null);
+				addTypeMember("StandardValueSet", "CampaignType", null);
+				addTypeMember("StandardValueSet", "CaseContactRole", null);
+				addTypeMember("StandardValueSet", "CaseOrigin", null);
+				addTypeMember("StandardValueSet", "CasePriority", null);
+				addTypeMember("StandardValueSet", "CaseReason", null);
+				addTypeMember("StandardValueSet", "CaseStatus", null);
+				addTypeMember("StandardValueSet", "CaseType", null);
+				addTypeMember("StandardValueSet", "ContactRole", null);
+				addTypeMember("StandardValueSet", "ContractContactRole", null);
+				addTypeMember("StandardValueSet", "ContractStatus", null);
+				addTypeMember("StandardValueSet", "EntitlementType", null);
+				addTypeMember("StandardValueSet", "EventSubject", null);
+				addTypeMember("StandardValueSet", "EventType", null);
+				addTypeMember("StandardValueSet", "FiscalYearPeriodName", null);
+				addTypeMember("StandardValueSet", "FiscalYearPeriodPrefix", null);
+				addTypeMember("StandardValueSet", "FiscalYearQuarterName", null);
+				addTypeMember("StandardValueSet", "FiscalYearQuarterPrefix", null);
+				addTypeMember("StandardValueSet", "IdeaMultiCategory", null);
+				addTypeMember("StandardValueSet", "IdeaStatus", null);
+				addTypeMember("StandardValueSet", "IdeaThemeStatus", null);
+				addTypeMember("StandardValueSet", "Industry", null);
+				addTypeMember("StandardValueSet", "LeadSource", null);
+				addTypeMember("StandardValueSet", "LeadStatus", null);
+				addTypeMember("StandardValueSet", "OpportunityCompetitor", null);
+				addTypeMember("StandardValueSet", "OpportunityStage", null);
+				addTypeMember("StandardValueSet", "OpportunityType", null);
+				addTypeMember("StandardValueSet", "OrderType", null);
+				addTypeMember("StandardValueSet", "PartnerRole", null);
+				addTypeMember("StandardValueSet", "Product2Family", null);
+				addTypeMember("StandardValueSet", "QuickTextCategory", null);
+				addTypeMember("StandardValueSet", "QuickTextChannel", null);
+				addTypeMember("StandardValueSet", "QuoteStatus", null);
+				addTypeMember("StandardValueSet", "RoleInTerritory2", null);
+				addTypeMember("StandardValueSet", "SalesTeamRole", null);
+				addTypeMember("StandardValueSet", "Salutation", null);
+				addTypeMember("StandardValueSet", "ServiceContractApprovalStatus", null);
+				addTypeMember("StandardValueSet", "SocialPostClassification", null);
+				addTypeMember("StandardValueSet", "SocialPostEngagementLevel", null);
+				addTypeMember("StandardValueSet", "SocialPostReviewedStatus", null);
+				addTypeMember("StandardValueSet", "SolutionStatus", null);
+				addTypeMember("StandardValueSet", "TaskPriority", null);
+				addTypeMember("StandardValueSet", "TaskStatus", null);
+				addTypeMember("StandardValueSet", "TaskSubject", null);
+				addTypeMember("StandardValueSet", "TaskType", null);
+				addTypeMember("StandardValueSet", "WorkOrderLineItemStatus", null);
+				addTypeMember("StandardValueSet", "WorkOrderPriority", null);
+				addTypeMember("StandardValueSet", "WorkOrderStatus", null);
+				log("Added StandardValueSet");
+			}
+			addType(SF_INCLUDE_TOPICS_FOR_OBJECTS, "TopicsForObjects");
 
 			// Reporting
 			addType(SF_INCLUDE_ANALYTIC_SNAPSHOTS, "AnalyticSnapshot");
@@ -189,7 +255,14 @@ public class CreatePackageXml extends SalesforceTask {
 			addFolderType(SF_INCLUDE_REPORTS, SF_INCLUDE_REPORTS_FOLDER_PREFIX, SF_INCLUDE_REPORTS_FOLDERS, 
 					SF_INCLUDE_REPORTS_UNFILED_PUBLIC, "Report", "Report", "OwnerId");
 			addType(SF_INCLUDE_REPORT_TYPES, "ReportType");
-
+			addType(SF_INCLUDE_ANALYTIC_MAP_CHARTS, "EclairGeoData");
+			addType(SF_INCLUDE_WAVE_APPLICATIONS, "WaveApplication");
+			addType(SF_INCLUDE_WAVE_DASHBOARDS, "WaveDashboard");
+			addType(SF_INCLUDE_WAVE_DATAFLOWS, "WaveDataflow");
+			addType(SF_INCLUDE_WAVE_DATASETS, "WaveDataset");
+			addType(SF_INCLUDE_WAVE_LENSES, "WaveLens");
+			addType(SF_INCLDUE_WAVE_TEMPLATE_BUNDLES, "WaveTemplateBundle");
+			addType(SF_INCLUDE_WAVE_XMDS, "WaveXmd");
 
 			// Security/Admin Related
 			addType(SF_INCLUDE_PROFILES, "Profile", SF_INCLUDE_PROFILES_PREFIX);
@@ -207,16 +280,36 @@ public class CreatePackageXml extends SalesforceTask {
 			addType(SF_INCLUDE_PATH_ASSISTANTS, "PathAssistant");
 			addType(SF_INCLUDE_SHARING_RULES, "SharingRules");
 			addType(SF_INCLUDE_SYNONYM_DICTIONARY, "SynonymDictionary");
+			addType(SF_INCLUDE_CERTIFICATES, "Certificate");
+			addType(SF_INCLUDE_CLEAN_DATA_SERVICES, "CleanDataService");
+			addType(SF_INCLUDE_CORS_WHITELIST_ORIGINS, "CorsWhitelistOrigin");
+			addType(SF_INCLUDE_DELEGATE_GROUPS, "DelegateGroup");
+			addType(SF_INCLUDE_DUPLICATE_RULES, "DuplicateRule");
+			addType(SF_INCLUDE_EXTERNAL_SERVICE_REGISTRATIONS, "ExternalServiceRegistration");
+			addType(SF_INCLUDE_PROFILE_PASSWORD_POLICIES, "ProfilePasswordPolicy");
+			addType(SF_INCLUDE_PROFILE_SESSION_SETTINGS, "ProfileSessionSetting");
+			addType(SF_INCLUDE_TERRITORIES2, "Territory2");
+			addType(SF_INCLUDE_TERRITORY2_MODELS, "Territory2Model");
+			addType(SF_INCLUDE_TERRITORY2_RULES, "Territory2Rule");
+			addType(SF_INCLUDE_TERRITORY2_TYPES, "Territory2Type");
+			addType(SF_INCLUDE_TRANSACTION_SECURITY_POLICIES, "TransactionSecurityPolicy");
 
 			// Service Types
 			addType(SF_INCLUDE_CALL_CENTERS, "CallCenter");
 			addType(SF_INCLUDE_DATA_CATEGORY_GROUPS, "DataCategoryGroup");
 			addType(SF_INCLUDE_ENTITLEMENT_TEMPLATES, "EntitlementTemplate");
 			addType(SF_INCLUDE_LIVE_CHAT_AGENT_CONFIGS, "LiveChatAgentConfig");
-			addType(SF_INCLUDE_LIVE_CHAT_BUTTONS, "LiveChatButtons");
-			addType(SF_INCLUDE_LIVE_CHAT_DEPLOYMENTS, "LiveChatDeployments");
+			addType(SF_INCLUDE_LIVE_CHAT_BUTTONS, "LiveChatButton");
+			addType(SF_INCLUDE_LIVE_CHAT_DEPLOYMENTS, "LiveChatDeployment");
 			addType(SF_INCLUDE_MILESTONE_TYPES, "MilestoneType");
 			addType(SF_INCLUDE_SKILLS, "Skill");
+			addType(SF_INCLUDE_CASE_SUBJECT_PARTICLES, "CaseSubjectParticle");
+			addType(SF_INCLUDE_CUSTOM_FEED_FILTERS, "CustomFeedFilter");
+			addType(SF_INCLUDE_EMBEDDED_SERVICE_BRANDINGS, "EmbeddedServiceBranding");
+			addType(SF_INCLUDE_EMBEDDED_SERVICE_CONFIGS, "EmbeddedServiceConfig");
+			addType(SF_INCLUDE_EMBEDDED_SERVICE_LIVE_AGENTS, "EmbeddedServiceLiveAgent");
+			addType(SF_INCLUDE_ENTITLEMENT_PROCESSES, "EntitlementProcess");
+			addType(SF_INCLUDE_LIVE_CHAT_SENSITIVE_DATA_RULES, "LiveChatSensitiveDataRule");
 
 			// Settings
 			if (getPropertyBoolean(SF_INCLUDE_ACCOUNT_SETTINGS)) {
@@ -234,9 +327,6 @@ public class CreatePackageXml extends SalesforceTask {
 			if (getPropertyBoolean(SF_INCLUDE_CASE_SETTINGS)) {
 				addTypeMember("Settings", "Case", null);
 			}
-			if (getPropertyBoolean(SF_INCLUDE_CHATTER_ANSWERS_SETTINGS)) {
-				addTypeMember("Settings", "ChatterAnswersSettings", null);
-			}
 			if (getPropertyBoolean(SF_INCLUDE_COMPANY_SETTINGS)) {
 				addTypeMember("Settings", "Company", null);
 			}
@@ -245,6 +335,9 @@ public class CreatePackageXml extends SalesforceTask {
 			}
 			if (getPropertyBoolean(SF_INCLUDE_ENTITLEMENT_SETTINGS)) {
 				addTypeMember("Settings", "Entitlement", null);
+			}
+			if (getPropertyBoolean(SF_INCLUDE_FILE_UPLOAD_AND_DOWNLOAD_SECURITY_SETTINGS)) {
+				addTypeMember("Settings", "FileUploadAndDownloadSecurity", null);
 			}
 			if (getPropertyBoolean(SF_INCLUDE_FORECASTING_SETTINGS)) {
 				addTypeMember("Settings", "Forecasting", null);
@@ -255,9 +348,8 @@ public class CreatePackageXml extends SalesforceTask {
 			if (getPropertyBoolean(SF_INCLUDE_KNOWLEDGE_SETTINGS)) {
 				addTypeMember("Settings", "Knowledge", null);
 			}
-			if (getPropertyBoolean(SF_INCLUDE_LEAD_CONVERT_SETTINGS)) {
-				addTypeMember("Settings", "LeadConvert", null);
-			}
+			// Lead Convert Settings are different from other settings
+			addType(SF_INCLUDE_LEAD_CONVERT_SETTINGS, "LeadConvertSettings");
 			if (getPropertyBoolean(SF_INCLUDE_LIVE_AGENT_SETTINGS)) {
 				addTypeMember("Settings", "LiveAgent", null);
 			}
@@ -273,6 +365,9 @@ public class CreatePackageXml extends SalesforceTask {
 			if (getPropertyBoolean(SF_INCLUDE_ORDER_SETTINGS)) {
 				addTypeMember("Settings", "Order", null);
 			}
+			if (getPropertyBoolean(SF_INCLUDE_ORG_PREFERENCE_SETTINGS)) {
+				addTypeMember("Settings", "OrgPreference", null);
+			}
 			if (getPropertyBoolean(SF_INCLUDE_PATH_ASSISTANT_SETTINGS)) {
 				addTypeMember("Settings", "PathAssistant", null);
 			}
@@ -282,8 +377,17 @@ public class CreatePackageXml extends SalesforceTask {
 			if (getPropertyBoolean(SF_INCLUDE_QUOTE_SETTINGS)) {
 				addTypeMember("Settings", "Quote", null);
 			}
+			if (getPropertyBoolean(SF_INCLUDE_SEARCH_SETTINGS)) {
+				addTypeMember("Settings", "Search", null);
+			}
 			if (getPropertyBoolean(SF_INCLUDE_SECURITY_SETTINGS)) {
 				addTypeMember("Settings", "Security", null);
+			}
+			if (getPropertyBoolean(SF_INCLUDE_SOCIAL_CUSTOMER_SERVICE_SETTINGS)) {
+				addTypeMember("Settings", "SocialCustomerService", null);
+			}
+			if (getPropertyBoolean(SF_INCLUDE_TERRITORY2_SETTINGS)) {
+				addTypeMember("Settings", "Territory2", null);
 			}
 
 			//Sites
@@ -293,6 +397,15 @@ public class CreatePackageXml extends SalesforceTask {
 			addType(SF_INCLUDE_PORTALS, "Portal");
 			addType(SF_INCLUDE_SHARING_SETS, "SharingSet");
 			addType(SF_INCLUDE_SITE_DOT_COMS, "SiteDotCom");
+			addType(SF_INCLUDE_BRANDING_SETS, "BrandingSet");
+			addType(SF_INCLUDE_CMS_CONNECT_SOURCES, "CMSConnectSource");
+			addType(SF_INCLUDE_COMMUNITY_TEMPLATE_DEFINITIONS, "CommunityTemplateDefinition");
+			addType(SF_INCLUDE_COMMUNITY_THEME_DEFINITIONS, "CommunityThemeDefinition");
+			addType(SF_INCLUDE_CONTENT_ASSETS, "ContentAsset");
+			addType(SF_INCLUDE_KEYWORD_LISTS, "KeywordList");
+			addType(SF_INCLUDE_MANAGED_TOPICS, "ManagedTopics");
+			addType(SF_INCLUDE_MODERATION_RULES, "ModerationRule");
+			addType(SF_INCLUDE_NETWORK_BRANDINGS, "NetworkBranding");
 
 			// Workflows
 			addType(SF_INCLUDE_APPROVAL_PROCESSES, "ApprovalProcess");
@@ -310,6 +423,13 @@ public class CreatePackageXml extends SalesforceTask {
 			addType(SF_INCLUDE_WORKFLOW_OUTBOUND_MESSAGES, "WorkflowOutboundMessage");
 			addType(SF_INCLUDE_WORKFLOW_RULES, "WorkflowRule");
 			addType(SF_INCLUDE_WORKFLOW_TASKS, "WorkflowTask");
+			addType(SF_INCLUDE_EVENT_DELIVERIES, "EventDelivery");
+			addType(SF_INCLUDE_EVENT_SUBSCRIPTIONS, "EventSubscription");
+			
+			// Einstein
+			addType(SF_INCLUDE_BOTS, "Bot");
+			addType(SF_INCLUDE_BOT_VERSIONS, "BotVersion");
+			addType(SF_INCLUDE_MI_DOMAINS, "MIDomain");
 
 
 			PackageUtilities.createPackageXmlFile(packageFileName, asOfVersion, typesMap);
@@ -350,7 +470,7 @@ public class CreatePackageXml extends SalesforceTask {
 					if (splitNames.length == 2) {
 						// This is a subset of Object so it include the Object name first and we just want the component name
 						String objectName = splitNames[0];
-						if (!objectNameEnumIdMap.containsKey(objectName)) {
+						if (!objectNameEnumIdMap.containsKey(objectName) && !typeName.equals("CustomMetadata")) {
 							// We are not including this object so don't include this component
 							continue;
 						}
@@ -459,7 +579,7 @@ public class CreatePackageXml extends SalesforceTask {
 				if (managedPackageTypes.contains("CustomObject") || namespace == null || namespace.trim().length() == 0) {
 					String objectName = p.getFullName();
 					String objectEnumId = p.getId();
-					if (!objectName.endsWith("__c")) {
+					if (!objectName.endsWith("__c") && !objectName.endsWith("__mdt")) {
 						// Standard object so use name as enum
 						objectEnumId = objectName;
 					}

@@ -76,6 +76,7 @@ public class SalesforceTask extends Task {
 	public static final String SF_INCLUDE_STATIC_RESOURCES = "sf.includeStaticResources";
 	public static final String SF_INCLUDE_AURA_DEFINITION_BUNDLES = "sf.includeAuraDefinitionBundles";
 	public static final String SF_INCLUDE_PLATFORM_CACHE_PARTITIONS = "sf.includePlatformCachePartitions";
+	public static final String SF_INCLUDE_EMAIL_SERVICES_FUNCTIONS = "sf.includeEmailServicesFunctions";
 	
 	// App
 	public static final String SF_INCLUDE_APP_MENUS = "sf.includeAppMenus";
@@ -92,6 +93,8 @@ public class SalesforceTask extends Task {
 	public static final String SF_INCLUDE_HOME_PAGE_LAYOUTS = "sf.includeHomePageLayouts";
 	public static final String SF_INCLUDE_INSTALLED_PACKAGES = "sf.includeInstalledPackages";
 	public static final String SF_INCLUDE_TRANSLATIONS = "sf.includeTranslations";
+	public static final String SF_INCLUDE_CHATTER_EXTENSIONS = "sf.includeChatterExtensions";
+	public static final String SF_INCLUDE_LIGHTNING_BOLTS = "sf.includeLightningBolts";
 	
 	//Object
 	public static final String SF_INCLUDE_ACTION_OVERRIDES = "sf.includeActionOverrides";
@@ -113,8 +116,13 @@ public class SalesforceTask extends Task {
 	public static final String SF_INCLUDE_LAYOUTS = "sf.includeLayouts";
 	public static final String SF_INCLUDE_PUBLISHER_ACTIONS = "sf.includePublisherActions";
 	public static final String SF_INCLUDE_ACTION_LINK_GROUP_TEMPLATES = "sf.includeActionLinkGroupTemplates";
+	public static final String SF_INCLUDE_CUSTOM_METADATA = "sf.includeCustomMetadata";
+	public static final String SF_INCLUDE_GLOBAL_VALUE_SETS = "sf.includeGlobalValueSets";
+	public static final String SF_INCLUDE_GLOBAL_VALUE_SET_TRANSLATIONS = "sf.includeGlobalValueSetTranslations";
+	public static final String SF_INCLUDE_STANDARD_VALUE_SETS = "sf.includeStandardValueSets";
+	public static final String SF_INCLUDE_TOPICS_FOR_OBJECTS = "sf.includeTopicsForObjects";
 	
-	// Reporting
+	// Reporting/Analytics
 	public static final String SF_INCLUDE_ANALYTIC_SNAPSHOTS = "sf.includeAnalyticSnapshots";
 	public static final String SF_INCLUDE_DASHBOARDS = "sf.includeDashboards";
 	public static final String SF_INCLUDE_DASHBOARDS_FOLDER_PREFIX = "sf.includeDashboardsFolderPrefix";
@@ -124,6 +132,14 @@ public class SalesforceTask extends Task {
 	public static final String SF_INCLUDE_REPORTS_FOLDERS = "sf.includeReportsFolders";
 	public static final String SF_INCLUDE_REPORTS_UNFILED_PUBLIC = "sf.includeReportsUnfiledPublic";
 	public static final String SF_INCLUDE_REPORT_TYPES = "sf.includeReportTypes";
+	public static final String SF_INCLUDE_ANALYTIC_MAP_CHARTS = "sf.includeAnalyticMapCharts";
+	public static final String SF_INCLUDE_WAVE_APPLICATIONS = "sf.includeWaveApplications";
+	public static final String SF_INCLUDE_WAVE_DASHBOARDS = "sf.includeWaveDashboards";
+	public static final String SF_INCLUDE_WAVE_DATAFLOWS = "sf.includeWaveDataflows";
+	public static final String SF_INCLUDE_WAVE_DATASETS = "sf.includeWaveDatasets";
+	public static final String SF_INCLUDE_WAVE_LENSES = "sf.includeWaveLenses";
+	public static final String SF_INCLDUE_WAVE_TEMPLATE_BUNDLES = "sf.includeWaveTemplateBundles";
+	public static final String SF_INCLUDE_WAVE_XMDS = "sf.includeWaveXmds";
 	
 	// Security/Admin
 	public static final String SF_INCLUDE_PROFILES = "sf.includeProfiles";
@@ -142,6 +158,21 @@ public class SalesforceTask extends Task {
 	public static final String SF_INCLUDE_PATH_ASSISTANTS = "sf.includePathAssistants";
 	public static final String SF_INCLUDE_SHARING_RULES = "sf.includeSharingRules";
 	public static final String SF_INCLUDE_SYNONYM_DICTIONARY = "sf.includeSynonymDictionary";
+	public static final String SF_INCLUDE_CERTIFICATES = "sf.includeCertificates";
+	public static final String SF_INCLUDE_CLEAN_DATA_SERVICES = "sf.includeCleanDataServices";
+	public static final String SF_INCLUDE_CORS_WHITELIST_ORIGINS = "sf.includeCORSWhitelistOrigins";
+	public static final String SF_INCLUDE_DELEGATE_GROUPS = "sf.includeDelegateGroups";
+	public static final String SF_INCLUDE_DUPLICATE_RULES = "sf.includeDuplicateRules";
+	public static final String SF_INCLUDE_EXTERNAL_SERVICE_REGISTRATIONS = "sf.includeExternalServiceRegistrations";
+	public static final String SF_INCLUDE_PROFILE_PASSWORD_POLICIES = "sf.includeProfilePasswordPolicies";
+	public static final String SF_INCLUDE_PROFILE_SESSION_SETTINGS = "sf.includeSessionSessionSettings";
+	public static final String SF_INCLUDE_TERRITORIES2 = "sf.includeTerritories2";
+	public static final String SF_INCLUDE_TERRITORY2_MODELS = "sf.includeTerritory2Models";
+	public static final String SF_INCLUDE_TERRITORY2_RULES = "sf.includeTerritory2Rules";
+	public static final String SF_INCLUDE_TERRITORY2_TYPES = "sf.includeTerritory2Types";
+	public static final String SF_INCLUDE_TERRITORY2_SETTINGS = "sf.includeTerritory2Settings";
+	public static final String SF_INCLUDE_TRANSACTION_SECURITY_POLICIES = "sf.includeTransactionSecurityPolicies";
+	
 	// Service
 	public static final String SF_INCLUDE_CALL_CENTERS = "sf.includeCallCenters";
 	public static final String SF_INCLUDE_DATA_CATEGORY_GROUPS = "sf.includeDataCategoryGroups";
@@ -151,6 +182,13 @@ public class SalesforceTask extends Task {
 	public static final String SF_INCLUDE_LIVE_CHAT_DEPLOYMENTS = "sf.includeLiveChatDeployments";
 	public static final String SF_INCLUDE_MILESTONE_TYPES = "sf.includeMilestoneTypes";
 	public static final String SF_INCLUDE_SKILLS = "sf.includeSkills";
+	public static final String SF_INCLUDE_CASE_SUBJECT_PARTICLES = "sf.includeCaseSubjectParticles";
+	public static final String SF_INCLUDE_CUSTOM_FEED_FILTERS = "sf.includeCustomFeedFilters";
+	public static final String SF_INCLUDE_EMBEDDED_SERVICE_BRANDINGS = "sf.includeEmbeddedServiceBrandings";
+	public static final String SF_INCLUDE_EMBEDDED_SERVICE_CONFIGS = "sf.includeEmbeddedServiceConfigs";
+	public static final String SF_INCLUDE_EMBEDDED_SERVICE_LIVE_AGENTS = "sf.includeEmbeddedServiceLiveAgents";
+	public static final String SF_INCLUDE_ENTITLEMENT_PROCESSES = "sf.includeEntitlementProcesses";
+	public static final String SF_INCLUDE_LIVE_CHAT_SENSITIVE_DATA_RULES = "sf.includeLiveChatSensitiveDataRules";
 	
 	// Settings
 	public static final String SF_INCLUDE_ACCOUNT_SETTINGS = "sf.includeAccountSettings";
@@ -158,10 +196,10 @@ public class SalesforceTask extends Task {
 	public static final String SF_INCLUDE_ADDRESS_SETTINGS = "sf.includeAddressSettings";
 	public static final String SF_INCLUDE_BUSINESS_HOURS_SETTINGS = "sf.includeBusinessHoursSettings";
 	public static final String SF_INCLUDE_CASE_SETTINGS = "sf.includeCaseSettings";
-	public static final String SF_INCLUDE_CHATTER_ANSWERS_SETTINGS = "sf.includeChatterAnswersSettings";
 	public static final String SF_INCLUDE_COMPANY_SETTINGS = "sf.includeCompanySettings";
 	public static final String SF_INCLUDE_CONTRACT_SETTINGS = "sf.includeContractSettings";
 	public static final String SF_INCLUDE_ENTITLEMENT_SETTINGS = "sf.includeEntitlementSettings";
+	public static final String SF_INCLUDE_FILE_UPLOAD_AND_DOWNLOAD_SECURITY_SETTINGS = "sf.includeFileUploadAndDownloadSecuritySettings";
 	public static final String SF_INCLUDE_FORECASTING_SETTINGS = "sf.includeForecastingSettings";
 	public static final String SF_INCLUDE_IDEAS_SETTINGS = "sf.includeIdeasSettings";
 	public static final String SF_INCLUDE_KNOWLEDGE_SETTINGS = "sf.includeKnowledgeSettings";
@@ -171,10 +209,13 @@ public class SalesforceTask extends Task {
 	public static final String SF_INCLUDE_NAME_SETTINGS = "sf.includeNameSettings";
 	public static final String SF_INCLUDE_OPPORTUNITY_SETTINGS = "sf.includeOpportunitySettings";
 	public static final String SF_INCLUDE_ORDER_SETTINGS = "sf.includeOrderSettings";
+	public static final String SF_INCLUDE_ORG_PREFERENCE_SETTINGS = "sf.includeOrgPreferenceSettings";
 	public static final String SF_INCLUDE_PATH_ASSISTANT_SETTINGS = "sf.includePathAssistantSettings";
 	public static final String SF_INCLUDE_PRODUCT_SETTINGS = "sf.includeProductSettings";
 	public static final String SF_INCLUDE_QUOTE_SETTINGS = "sf.includeQuoteSettings";
+	public static final String SF_INCLUDE_SEARCH_SETTINGS = "sf.includeSearchSettings";
 	public static final String SF_INCLUDE_SECURITY_SETTINGS = "sf.includeSecuritySettings";
+	public static final String SF_INCLUDE_SOCIAL_CUSTOMER_SERVICE_SETTINGS = "sf.includeSocialCustomerServiceSettings";
 	
 	// Sites
 	public static final String SF_INCLUDE_COMMUNITIES = "sf.includeCommunities";
@@ -183,6 +224,15 @@ public class SalesforceTask extends Task {
 	public static final String SF_INCLUDE_PORTALS = "sf.includePortals";
 	public static final String SF_INCLUDE_SHARING_SETS = "sf.includeSharingSets";
 	public static final String SF_INCLUDE_SITE_DOT_COMS = "sf.includeSiteDotComs";
+	public static final String SF_INCLUDE_BRANDING_SETS = "sf.includeBrandingSets";
+	public static final String SF_INCLUDE_CMS_CONNECT_SOURCES = "sf.includeCMSConnectSources";
+	public static final String SF_INCLUDE_COMMUNITY_TEMPLATE_DEFINITIONS = "sf.includeCommunityTemplateDefinitions";
+	public static final String SF_INCLUDE_COMMUNITY_THEME_DEFINITIONS = "sf.includeCommunityThemeDefinitions";
+	public static final String SF_INCLUDE_CONTENT_ASSETS = "sf.includeContentAssets";
+	public static final String SF_INCLUDE_KEYWORD_LISTS = "sf.includeKeywordLists";
+	public static final String SF_INCLUDE_MANAGED_TOPICS = "sf.includeManagedTopics";
+	public static final String SF_INCLUDE_MODERATION_RULES = "sf.includeModerationRules";
+	public static final String SF_INCLUDE_NETWORK_BRANDINGS = "sf.includeNetworkBrandings";
 	
 	// Workflows
 	public static final String SF_INCLUDE_APPROVAL_PROCESSES = "sf.includeApprovalProcesses";
@@ -202,7 +252,13 @@ public class SalesforceTask extends Task {
 	public static final String SF_INCLUDE_WORKFLOW_OUTBOUND_MESSAGES = "sf.includeWorkflowOutboundMessages";
 	public static final String SF_INCLUDE_WORKFLOW_RULES = "sf.includeWorkflowRules";
 	public static final String SF_INCLUDE_WORKFLOW_TASKS = "sf.includeWorkflowTasks";
+	public static final String SF_INCLUDE_EVENT_DELIVERIES = "sf.includeEventDeliveries";
+	public static final String SF_INCLUDE_EVENT_SUBSCRIPTIONS = "sf.includeEventSubscriptions";
 	
+	//Einstein
+	public static final String SF_INCLUDE_BOTS = "sf.includeBots";
+	public static final String SF_INCLUDE_BOT_VERSIONS = "sf.includeBotVersions";
+	public static final String SF_INCLUDE_MI_DOMAINS = "sf.includeMIDomains";
 
 	protected PartnerConnection getPartnerConnection() {
 		if (partnerConnection == null) {

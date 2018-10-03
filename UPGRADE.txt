@@ -21,10 +21,32 @@ API version.
 - Download the latest ant migration tool zip file and extract the files.  Copy the
     ant-salesforce.jar file to sfdc/lib directory.
 
-- Download the latest Data Loader application and extract the dataloader-XX.jar file
-    and copy it as sfdc/lib/DataLoader.jar.
+- Download the latest Data Loader application and use the following steps to generate a new 
+    DataLoader.jar file for use with the build:
+
+        1. Create a new directory, such as DataLoader-37.0
+
+        2. Show the package contents of the current Data Loader application and copy
+        the Contents/Java directory (this directory contains nested directories that have
+        all of the jar files that we want to combine) into the new folder contained in step #1.
+
+        3. Go to the directory from step #1 in Terminal and create a jars folder:
+        mkdir jars
+
+        4. Copy the jar files from the java sub-directories into the jars folder:
+        find java -name '*.jar' -exec cp {} ./jars/ \;
+
+        5. Unzip the contents of the jar files into a tmp directory
+        unzip -o 'jars/*.jar' -d tmp
+
+        6. Remove MANIFEST.MF
+        rm tmp/META-INF/MANIFEST.MF
+
+        7. Generate combined DataLoader.jar file
+        jar cvfM DataLoader.jar -C tmp/ .
 
 - Update the java CreatePackageXml.java and SalesforceTask.java and samplelogin.properties
     to update the build and api version numbers.
+        - Build the YBS-ant.jar file
 
 - Update the ReleaseNotes.txt with the new build version notes.
