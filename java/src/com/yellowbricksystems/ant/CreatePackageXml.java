@@ -63,7 +63,7 @@ import com.sforce.soap.tooling.sobject.RecordType;
 
 public class CreatePackageXml extends SalesforceTask {
 
-	public static final String BUILD_VERSION = "43.0";
+	public static final String BUILD_VERSION = "43.1";
 	
 	public static final String PERMISSION_SET_QUERY = "select Id,Name,NamespacePrefix from PermissionSet where ProfileId = null order by NamespacePrefix, Name";
 	
@@ -172,6 +172,7 @@ public class CreatePackageXml extends SalesforceTask {
 				//addObjectToolingType(SF_INCLUDE_CUSTOM_FIELDS, "CustomField");
 				addType(SF_INCLUDE_RECORD_TYPES, "RecordType");
 				addType(SF_INCLUDE_BUSINESS_PROCESSES, "BusinessProcess");
+				addType(SF_INCLUDE_COMPACT_LAYOUTS, "CompactLayout");
 				addType(SF_INCLUDE_FIELD_SETS, "FieldSet");
 				addType(SF_INCLUDE_LIST_VIEWS, "ListView", SF_INCLUDE_LIST_VIEWS_PREFIX);
 				addType(SF_INCLUDE_SHARING_REASONS, "SharingReason");

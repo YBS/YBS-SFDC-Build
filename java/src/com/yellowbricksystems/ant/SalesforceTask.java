@@ -165,12 +165,11 @@ public class SalesforceTask extends Task {
 	public static final String SF_INCLUDE_DUPLICATE_RULES = "sf.includeDuplicateRules";
 	public static final String SF_INCLUDE_EXTERNAL_SERVICE_REGISTRATIONS = "sf.includeExternalServiceRegistrations";
 	public static final String SF_INCLUDE_PROFILE_PASSWORD_POLICIES = "sf.includeProfilePasswordPolicies";
-	public static final String SF_INCLUDE_PROFILE_SESSION_SETTINGS = "sf.includeSessionSessionSettings";
+	public static final String SF_INCLUDE_PROFILE_SESSION_SETTINGS = "sf.includeProfileSessionSettings";
 	public static final String SF_INCLUDE_TERRITORIES2 = "sf.includeTerritories2";
 	public static final String SF_INCLUDE_TERRITORY2_MODELS = "sf.includeTerritory2Models";
 	public static final String SF_INCLUDE_TERRITORY2_RULES = "sf.includeTerritory2Rules";
 	public static final String SF_INCLUDE_TERRITORY2_TYPES = "sf.includeTerritory2Types";
-	public static final String SF_INCLUDE_TERRITORY2_SETTINGS = "sf.includeTerritory2Settings";
 	public static final String SF_INCLUDE_TRANSACTION_SECURITY_POLICIES = "sf.includeTransactionSecurityPolicies";
 	
 	// Service
@@ -216,6 +215,7 @@ public class SalesforceTask extends Task {
 	public static final String SF_INCLUDE_SEARCH_SETTINGS = "sf.includeSearchSettings";
 	public static final String SF_INCLUDE_SECURITY_SETTINGS = "sf.includeSecuritySettings";
 	public static final String SF_INCLUDE_SOCIAL_CUSTOMER_SERVICE_SETTINGS = "sf.includeSocialCustomerServiceSettings";
+	public static final String SF_INCLUDE_TERRITORY2_SETTINGS = "sf.includeTerritory2Settings";
 	
 	// Sites
 	public static final String SF_INCLUDE_COMMUNITIES = "sf.includeCommunities";

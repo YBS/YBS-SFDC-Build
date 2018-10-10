@@ -1,5 +1,9 @@
 YBS Build Release Notes
 -----------------------
+v43.1
+    - Added sf.includeCompactLayouts to salesforce.properties and updated Compact Layouts
+        logic to include the Compact Layouts in package.xml
+    - Fixed sf.includeSessionSessionSettings to sf.includeProfileSessionSettings
 
 v43.0
     - Updated build to use API version 43.0 (Summer '18)
@@ -41,7 +45,7 @@ v43.0
         - NetworkBranding / sf.includeNetworkBrandings
         - OrgPreferenceSettings / sf.includeOrgPreferenceSetting
         - ProfilePasswordPolicy / sf.includeProfilePasswordPolicies
-        - ProfileSessionSetting / sf.includeSessionSessionSettings
+        - ProfileSessionSetting / sf.includeProfileSessionSettings
         - SearchSettings / sf.includeSearchSettings
         - SocialCustomerServiceSettings / sf.includeSocialCustomerServiceSettings
         - StandardValueSet / sf.includeStandardValueSets
