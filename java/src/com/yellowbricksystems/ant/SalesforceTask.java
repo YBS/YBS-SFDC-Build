@@ -233,6 +233,8 @@ public class SalesforceTask extends Task {
 	public static final String SF_INCLUDE_MANAGED_TOPICS = "sf.includeManagedTopics";
 	public static final String SF_INCLUDE_MODERATION_RULES = "sf.includeModerationRules";
 	public static final String SF_INCLUDE_NETWORK_BRANDINGS = "sf.includeNetworkBrandings";
+	public static final String SF_INCLUDE_AUDIENCES = "sf.includeAudiences";
+	public static final String SF_INCLUDE_LIGHTNING_EXPERIENCE_THEMES = "sf.includeLightningExperienceThemes";
 	
 	// Workflows
 	public static final String SF_INCLUDE_APPROVAL_PROCESSES = "sf.includeApprovalProcesses";

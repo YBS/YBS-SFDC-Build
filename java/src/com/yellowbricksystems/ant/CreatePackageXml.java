@@ -117,15 +117,7 @@ public class CreatePackageXml extends SalesforceTask {
 			addToolingType(SF_INCLUDE_PAGES, "ApexPage");
 			addToolingType(SF_INCLUDE_TRIGGERS, "ApexTrigger");
 			addType(SF_INCLUDE_FLEXI_PAGES, "FlexiPage");
-			// Due to a listMetadata bug that doesn't return the correct fullName for active Flows, we
-			// can't use listMetadata to retrieve the list of Flows.  Instead we can only add it as a 
-			// "*" in package.xml to retrieve all Flows.
-			// addType(SF_INCLUDE_FLOWS, "Flow");
-			if (getPropertyBoolean(SF_INCLUDE_FLOWS)) {
-				List<String> memberList = new ArrayList<String>();
-				memberList.add("*");
-				typesMap.put("Flow", memberList);
-			}
+			addType(SF_INCLUDE_FLOWS, "Flow");
 			addType(SF_INCLUDE_SCONTROLS, "Scontrol");
 			addType(SF_INCLUDE_STATIC_RESOURCES, "StaticResource");
 			addType(SF_INCLUDE_AURA_DEFINITION_BUNDLES, "AuraDefinitionBundle");
@@ -407,6 +399,8 @@ public class CreatePackageXml extends SalesforceTask {
 			addType(SF_INCLUDE_MANAGED_TOPICS, "ManagedTopics");
 			addType(SF_INCLUDE_MODERATION_RULES, "ModerationRule");
 			addType(SF_INCLUDE_NETWORK_BRANDINGS, "NetworkBranding");
+			addType(SF_INCLUDE_AUDIENCES, "Audience");
+			addType(SF_INCLUDE_LIGHTNING_EXPERIENCE_THEMES, "LightningExperienceTheme");
 
 			// Workflows
 			addType(SF_INCLUDE_APPROVAL_PROCESSES, "ApprovalProcess");

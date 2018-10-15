@@ -1,5 +1,12 @@
 YBS Build Release Notes
 -----------------------
+v44.0:
+    - Updated build to use API version 44.0 (Winter '19)
+    - Added the following Metadata Types/Properties:
+        - Audience / sf.includeAudiences
+        - LightningExperienceTheme / sf.includeLightningExperienceThemes
+    - Updated Flow logic to pull in file names instead of using "*"
+    
 v43.1
     - Added sf.includeCompactLayouts to salesforce.properties and updated Compact Layouts
         logic to include the Compact Layouts in package.xml
