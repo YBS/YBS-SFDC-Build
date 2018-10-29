@@ -493,6 +493,12 @@ SOFTWARE.
 				<replacefilter token="_file_" value="data/exports/@{file}.csv"/>
 				<replacefilter token="_keyfile_" value="data/config/key.txt"/>
 			</replace>
+			<!-- New versions of Data Loader put text before the encrypted password and we need to remove it -->
+			<replace file="data/config/process-conf.xml">
+				<replacetoken><![CDATA[The output string of encryption is: 
+]]></replacetoken>
+				<replaceValue></replaceValue>
+			</replace>
 		
 			<java classname="com.salesforce.dataloader.process.ProcessRunner" classpath="lib/DataLoader.jar" failonerror="true" fork="true">
 				<sysproperty key="salesforce.config.dir" value="data/config"/>
@@ -535,6 +541,12 @@ SOFTWARE.
 			<replacefilter token="_keyfile_" value="data/config/key.txt"/>
 			<replacefilter token="_mappingfile_" value="data/mappings/@{mappingfile}.sdl"/>
 			<replacefilter token="_externalid_" value="@{externalid}"/>
+		</replace>
+		<!-- New versions of Data Loader put text before the encrypted password and we need to remove it -->
+		<replace file="data/config/process-conf.xml">
+			<replacetoken><![CDATA[The output string of encryption is: 
+]]></replacetoken>
+			<replaceValue></replaceValue>
 		</replace>
 			
 		<java classname="com.salesforce.dataloader.process.ProcessRunner" classpath="lib/DataLoader.jar" failonerror="true" fork="true">

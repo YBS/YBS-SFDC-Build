@@ -1,5 +1,11 @@
 YBS Build Release Notes
 -----------------------
+v44.1:
+	- Fixed DataLoader encrypted password update that was preventing data tasks from completing. 
+	  The issue was that some version of the DataLoader JAR file after 37.0 starting putting a line
+	  of text with the encrypted password which prevented the job from reading the password during
+	  the import/export.  We are now stripping out that extra line of text from the process-conf.xml file.
+	  
 v44.0:
     - Updated build to use API version 44.0 (Winter '19)
     - Added the following Metadata Types/Properties:
