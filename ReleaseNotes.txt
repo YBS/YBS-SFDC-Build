@@ -1,5 +1,10 @@
 YBS Build Release Notes
 -----------------------
+v45.0:
+	- Updated build to use API version 45.0 (Spring '19)
+		- Except for DataLoader.jar because there is no v45.0 for DataLoader yet
+	- Updated List Metadata call to retry once before failing
+	
 v44.1:
 	- Fixed DataLoader encrypted password update that was preventing data tasks from completing. 
 	  The issue was that some version of the DataLoader JAR file after 37.0 starting putting a line

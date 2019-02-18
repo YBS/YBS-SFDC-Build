@@ -63,7 +63,7 @@ import com.sforce.soap.tooling.sobject.RecordType;
 
 public class CreatePackageXml extends SalesforceTask {
 
-	public static final String BUILD_VERSION = "44.0";
+	public static final String BUILD_VERSION = "45.0";
 	
 	public static final String PERMISSION_SET_QUERY = "select Id,Name,NamespacePrefix from PermissionSet where ProfileId = null order by NamespacePrefix, Name";
 	
@@ -455,7 +455,14 @@ public class CreatePackageXml extends SalesforceTask {
 			ListMetadataQuery query = new ListMetadataQuery();
 			query.setType(typeName);
 
-			FileProperties[] properties = metaConnection.listMetadata(new ListMetadataQuery[] {query}, asOfVersion);
+            FileProperties[] properties;
+            try {
+                properties = metaConnection.listMetadata(new ListMetadataQuery[] {query}, asOfVersion);
+            } catch (Exception ex1) {
+                // Retry once
+                log("Retrying List Metadata call...");
+                properties = metaConnection.listMetadata(new ListMetadataQuery[] {query}, asOfVersion);
+            }
 			for (FileProperties p : properties) {
 				String namespace = p.getNamespacePrefix();
 				if (managedPackageTypes.contains(typeName) || namespace == null || namespace.trim().length() == 0) {

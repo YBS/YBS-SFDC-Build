@@ -23,7 +23,7 @@ API version.
 
 - Download the latest Data Loader application and use the following steps to generate a new 
     DataLoader.jar file for use with the build:
-
+	MAC OS X:
         1. Create a new directory, such as DataLoader-37.0
 
         2. Show the package contents of the current Data Loader application and copy
@@ -44,6 +44,10 @@ API version.
 
         7. Generate combined DataLoader.jar file
         jar cvfM DataLoader.jar -C tmp/ .
+		
+	Windows:
+		- Find the dataloader-XX.0.0-uber.jar file in the installed directory and copy it to the lib 
+		directory and rename it DataLoader.jar.
 
 - Update the java CreatePackageXml.java and SalesforceTask.java and samplelogin.properties
     to update the build and api version numbers.
