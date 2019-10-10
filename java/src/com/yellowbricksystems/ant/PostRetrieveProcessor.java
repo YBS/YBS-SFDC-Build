@@ -74,10 +74,7 @@ SOFTWARE.
 package com.yellowbricksystems.ant;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -142,7 +139,9 @@ public class PostRetrieveProcessor extends SalesforceTask {
 			filterSites();
 			filterPermissionSets();
 			filterProfiles();
-			
+			sortApplicationOverrides();
+			// Defer Workflow Time Triggers to prevent extraneous updates
+			//sortWorkflowTimeTriggers();
 		}
 		catch (Exception ex)
 		{
@@ -693,4 +692,159 @@ public class PostRetrieveProcessor extends SalesforceTask {
 		}
 	}
 
+
+    protected void sortApplicationOverrides() throws Exception {
+        if (getPropertyBoolean(SF_INCLUDE_APPLICATIONS)) {
+            String applicationsDirectoryName = retrieveTarget + "/applications";
+            File applicationsDirectory = new File(applicationsDirectoryName);
+            String[] files = applicationsDirectory.list();
+            if (files != null) {
+                for (String fileName : files) {
+                    String fullFileName = applicationsDirectoryName + "/" + fileName;
+                    File xmlFile = new File(fullFileName);
+                    DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+                    DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+                    Document doc = dBuilder.parse(xmlFile);
+                    doc.getDocumentElement().normalize();
+
+                    NodeList applicationNodeList = doc.getElementsByTagName("CustomApplication");
+                    for (int i = 0; i < applicationNodeList.getLength(); i++) {
+                        Node appNode = applicationNodeList.item(i);
+
+                        Comparator actionOverrideComparator = new ActionOverrideComparator();
+                        sortNodes(doc, appNode, "actionOverrides", actionOverrideComparator);
+                        sortNodes(doc, appNode, "profileActionOverrides", actionOverrideComparator);
+                        ProcessorUtilities.cleanDocument(doc, appNode);
+                    }
+                    // Always save so that we don't get "phantom" changes
+                    ProcessorUtilities.saveDocument(doc, fullFileName);
+                }
+            }
+        }
+    }
+
+    protected void sortWorkflowTimeTriggers() throws Exception {
+        if (getPropertyBoolean(SF_INCLUDE_WORKFLOW_RULES)) {
+            String workflowDirectoryName = retrieveTarget + "/workflows";
+            File workflowDirectory = new File(workflowDirectoryName);
+            String[] files = workflowDirectory.list();
+            if (files != null) {
+                for (String fileName : files) {
+                    String fullFileName = workflowDirectoryName + "/" + fileName;
+                    File xmlFile = new File(fullFileName);
+                    DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+                    DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+                    Document doc = dBuilder.parse(xmlFile);
+                    doc.getDocumentElement().normalize();
+
+                    Comparator workflowRulesComparator = new WorkflowRulesComparator();
+                    NodeList workflowNodeList = doc.getElementsByTagName("Workflow");
+                    for (int i = 0; i < workflowNodeList.getLength(); i++) {
+                        Node workflowNode = workflowNodeList.item(i);
+
+                        if (workflowNode.getNodeType() == Node.ELEMENT_NODE) {
+                            Element workflowElement = (Element) workflowNode;
+
+                            NodeList rulesNodes = workflowElement.getElementsByTagName("rules");
+                            if (rulesNodes != null) {
+                                for (int j=0; j < rulesNodes.getLength(); j++) {
+                                    Node rulesNode = rulesNodes.item(j);
+                                    sortNodes(doc, rulesNode, "workflowTimeTriggers", workflowRulesComparator);
+                                }
+                            }
+                        }
+                        ProcessorUtilities.cleanDocument(doc, workflowNode);
+                    }
+                    // Always save so that we don't get "phantom" changes
+                    ProcessorUtilities.saveDocument(doc, fullFileName);
+                }
+            }
+        }
+    }
+
+    protected void sortNodes(Document doc, Node parentNode, String nodeName, Comparator<Node> comparator) throws Exception {
+        List<Node> allNodes = new ArrayList<Node>();
+        List<Node> matchNodes = new ArrayList<Node>();
+        List<Node> beforeNodes = new ArrayList<Node>();
+        List<Node> afterNodes = new ArrayList<Node>();
+
+        NodeList childNodes = parentNode.getChildNodes();
+        for (int i=0; i < childNodes.getLength(); ++i) {
+            Node childNode = childNodes.item(i);
+            allNodes.add(childNode);
+
+            String childNodeName = childNode.getNodeName();
+            if (childNodeName != null) {
+                if (childNodeName.equalsIgnoreCase(nodeName)) {
+                    matchNodes.add(childNode);
+                } else if (matchNodes.size() > 0) {
+                    afterNodes.add(childNode);
+                } else {
+                    beforeNodes.add(childNode);
+                }
+            }
+        }
+        if (matchNodes.size() > 0) {
+            // There are matched nodes, so delete them all and put them back in the right order
+            ProcessorUtilities.removeNodes(doc, parentNode, allNodes);
+            Collections.sort(matchNodes, comparator);
+            for (Node n : beforeNodes) {
+                parentNode.appendChild(n);
+            }
+            for (Node n : matchNodes) {
+                parentNode.appendChild(n);
+            }
+            for (Node n : afterNodes) {
+                parentNode.appendChild(n);
+            }
+        }
+    }
+
+    class ActionOverrideComparator implements Comparator<Node> {
+        @Override
+        public int compare(Node n1, Node n2) {
+            String key1 = getKey(n1);
+            String key2 = getKey(n2);
+
+            return key1.compareTo(key2);
+        }
+
+        private String getKey(Node n) {
+            String key = "";
+            if (n.getNodeType() == Node.ELEMENT_NODE) {
+                Element e = (Element) n;
+                String action = ProcessorUtilities.getTagValue(e, "actionName");
+                String content = ProcessorUtilities.getTagValue(e, "content");
+                String formFactor = ProcessorUtilities.getTagValue(e, "formFactor");
+                String pageOrSobjectType = ProcessorUtilities.getTagValue(e, "pageOrSobjectType");
+                String recordType = ProcessorUtilities.getTagValue(e, "recordType");
+                String profile = ProcessorUtilities.getTagValue(e, "profile");
+                key = action + "-" + content + "-" + formFactor + "-" + pageOrSobjectType + "-" + recordType + "-" + profile;
+            }
+
+            return key;
+        }
+    }
+
+    class WorkflowRulesComparator implements Comparator<Node> {
+        @Override
+        public int compare(Node n1, Node n2) {
+            String key1 = getKey(n1);
+            String key2 = getKey(n2);
+
+            return key1.compareTo(key2);
+        }
+
+        private String getKey(Node n) {
+            String key = "";
+            if (n.getNodeType() == Node.ELEMENT_NODE) {
+                Element e = (Element) n;
+                String timeLength = ProcessorUtilities.getTagValue(e, "timeLength");
+                String workflowTimeTriggerUnit = ProcessorUtilities.getTagValue(e, "workflowTimeTriggerUnit");
+                key = timeLength + "-" + workflowTimeTriggerUnit;
+            }
+
+            return key;
+        }
+    }
 }

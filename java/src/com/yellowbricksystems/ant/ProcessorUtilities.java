@@ -51,22 +51,25 @@ public class ProcessorUtilities {
 			for (Node removeNode : removeNodes) {
 				parentNode.removeChild(removeNode);
 			}
+			cleanDocument(doc, parentNode);
+		}
+	}
 
-			doc.getDocumentElement().normalize();
-			XPathFactory xpathFactory = XPathFactory.newInstance();
-			// XPath to find empty text nodes.
-			XPathExpression xpathExp = xpathFactory.newXPath().compile("//text()[normalize-space(.) = '']");  
-			NodeList emptyTextNodes = (NodeList) 
-					xpathExp.evaluate(parentNode, XPathConstants.NODESET);
+	public static void cleanDocument(Document doc, Node parentNode) throws Exception {
+		doc.getDocumentElement().normalize();
+		XPathFactory xpathFactory = XPathFactory.newInstance();
+		// XPath to find empty text nodes.
+		XPathExpression xpathExp = xpathFactory.newXPath().compile("//text()[normalize-space(.) = '']");
+		NodeList emptyTextNodes = (NodeList)
+				xpathExp.evaluate(parentNode, XPathConstants.NODESET);
 
-			// Remove each empty text node from document.
-			for (int k = 0; k < emptyTextNodes.getLength(); k++) {
-				Node emptyTextNode = emptyTextNodes.item(k);
-				if (emptyTextNode != null) {
-					Node emptyTextParentNode = emptyTextNode.getParentNode();
-					if (emptyTextParentNode != null) {
-						emptyTextParentNode.removeChild(emptyTextNode);
-					}
+		// Remove each empty text node from document.
+		for (int k = 0; k < emptyTextNodes.getLength(); k++) {
+			Node emptyTextNode = emptyTextNodes.item(k);
+			if (emptyTextNode != null) {
+				Node emptyTextParentNode = emptyTextNode.getParentNode();
+				if (emptyTextParentNode != null) {
+					emptyTextParentNode.removeChild(emptyTextNode);
 				}
 			}
 		}

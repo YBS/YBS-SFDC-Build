@@ -1,5 +1,10 @@
 YBS Build Release Notes
 -----------------------
+v45.1:
+	- Updated post-retrieve processing to sort application overrides in customApplication metadata to
+	  prevent artifacts from different environments since Salesforce does not consistently sort by these
+	  attributes.
+	  
 v45.0:
 	- Updated build to use API version 45.0 (Spring '19)
 		- Except for DataLoader.jar because there is no v45.0 for DataLoader yet
