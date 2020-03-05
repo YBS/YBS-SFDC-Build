@@ -1,5 +1,8 @@
 YBS Build Release Notes
 -----------------------
+v48.0:
+	- Updated build to use API version 48.0 (Spring '20)
+	
 v45.1:
 	- Updated post-retrieve processing to sort application overrides in customApplication metadata to
 	  prevent artifacts from different environments since Salesforce does not consistently sort by these
