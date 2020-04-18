@@ -1,5 +1,11 @@
 YBS Build Release Notes
 -----------------------
+v45.2:
+	- Added the following additional post-retrieve processing sorting:
+		- Layout: platformActionListItems
+		- Custom Field dependent picklist values: controllingFieldValue and valueSettings
+		- Workflow: workflowTimeTriggers
+	  
 v45.1:
 	- Updated post-retrieve processing to sort application overrides in customApplication metadata to
 	  prevent artifacts from different environments since Salesforce does not consistently sort by these

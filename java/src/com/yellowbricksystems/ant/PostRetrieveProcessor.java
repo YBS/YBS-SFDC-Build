@@ -80,10 +80,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.tools.ant.BuildException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
 
 public class PostRetrieveProcessor extends SalesforceTask {
 
@@ -140,8 +137,8 @@ public class PostRetrieveProcessor extends SalesforceTask {
 			filterPermissionSets();
 			filterProfiles();
 			sortApplicationOverrides();
-			// Defer Workflow Time Triggers to prevent extraneous updates
-			//sortWorkflowTimeTriggers();
+			sortLayouts();
+			sortWorkflowTimeTriggers();
 		}
 		catch (Exception ex)
 		{
@@ -417,6 +414,8 @@ public class PostRetrieveProcessor extends SalesforceTask {
 						// Loop through and see if any should be removed (based on ignore/namespace)
 						NodeList customFieldNodes = objectElement.getElementsByTagName("fields");
 						if (customFieldNodes != null) {
+							ValueSettingsComparator valueSettingsComparator = new ValueSettingsComparator();
+							TextNodeComparator textNodeComparator = new TextNodeComparator();
 							for (int j=0; j < customFieldNodes.getLength(); j++) {
 								Node customFieldNode = customFieldNodes.item(j);
 								if (!getPropertyBoolean(SF_INCLUDE_CUSTOM_FIELDS) || packageCustomFields == null) {
@@ -438,6 +437,27 @@ public class PostRetrieveProcessor extends SalesforceTask {
 											if ((!packageCustomFields.contains(fullName) && fullName.endsWith("__c")) ||
 													ignoreList.contains(ignoreName)) {
 												removeNodes.add(customFieldNode);
+											} else {
+												// Sort valueSettings nodes
+												NodeList valueSetNodes = customFieldElement.getElementsByTagName("valueSet");
+												for (int k=0; k < valueSetNodes.getLength(); ++k) {
+													Node valueSetNode = valueSetNodes.item(k);
+													if (valueSetNode.getNodeType() == Node.ELEMENT_NODE) {
+														Element valueSetElement = (Element) valueSetNode;
+
+														// Sort controllingFieldValue first
+														NodeList valueSettingsNodes = valueSetElement.getElementsByTagName("valueSettings");
+														for (int l=0; l < valueSettingsNodes.getLength(); ++l) {
+															Node valueSettingsNode = valueSettingsNodes.item(l);
+															sortNodes(doc, valueSettingsNode, "controllingFieldValue", textNodeComparator);
+															ProcessorUtilities.cleanDocument(doc, valueSettingsNode);
+														}
+
+														// Then sort valueSettings
+														sortNodes(doc, valueSetNode, "valueSettings", valueSettingsComparator);
+														ProcessorUtilities.cleanDocument(doc, valueSetNode);
+													}
+												}
 											}
 										}
 									}
@@ -707,11 +727,11 @@ public class PostRetrieveProcessor extends SalesforceTask {
                     Document doc = dBuilder.parse(xmlFile);
                     doc.getDocumentElement().normalize();
 
+					Comparator actionOverrideComparator = new ActionOverrideComparator();
                     NodeList applicationNodeList = doc.getElementsByTagName("CustomApplication");
                     for (int i = 0; i < applicationNodeList.getLength(); i++) {
                         Node appNode = applicationNodeList.item(i);
 
-                        Comparator actionOverrideComparator = new ActionOverrideComparator();
                         sortNodes(doc, appNode, "actionOverrides", actionOverrideComparator);
                         sortNodes(doc, appNode, "profileActionOverrides", actionOverrideComparator);
                         ProcessorUtilities.cleanDocument(doc, appNode);
@@ -723,7 +743,46 @@ public class PostRetrieveProcessor extends SalesforceTask {
         }
     }
 
-    protected void sortWorkflowTimeTriggers() throws Exception {
+	protected void sortLayouts() throws Exception {
+		if (getPropertyBoolean(SF_INCLUDE_LAYOUTS)) {
+			String layoutsDirectoryName = retrieveTarget + "/layouts";
+			File layoutsDirectory = new File(layoutsDirectoryName);
+			String[] files = layoutsDirectory.list();
+			if (files != null) {
+				for (String fileName : files) {
+					String fullFileName = layoutsDirectoryName + "/" + fileName;
+					File xmlFile = new File(fullFileName);
+					DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+					DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+					Document doc = dBuilder.parse(xmlFile);
+					doc.getDocumentElement().normalize();
+
+					Comparator platformActionComparator = new PlatformActionComparator();
+					NodeList layoutNodeList = doc.getElementsByTagName("Layout");
+					for (int i = 0; i < layoutNodeList.getLength(); i++) {
+						Node layoutNode = layoutNodeList.item(i);
+
+						if (layoutNode.getNodeType() == Node.ELEMENT_NODE) {
+							Element layoutElement = (Element) layoutNode;
+
+							NodeList platformActionListNodes = layoutElement.getElementsByTagName("platformActionList");
+							if (platformActionListNodes != null) {
+								for (int j=0; j < platformActionListNodes.getLength(); j++) {
+									Node platformActionListNode = platformActionListNodes.item(j);
+									sortNodes(doc, platformActionListNode, "platformActionListItems", platformActionComparator);
+								}
+							}
+						}
+						ProcessorUtilities.cleanDocument(doc, layoutNode);
+					}
+					// Always save so that we don't get "phantom" changes
+					ProcessorUtilities.saveDocument(doc, fullFileName);
+				}
+			}
+		}
+	}
+
+	protected void sortWorkflowTimeTriggers() throws Exception {
         if (getPropertyBoolean(SF_INCLUDE_WORKFLOW_RULES)) {
             String workflowDirectoryName = retrieveTarget + "/workflows";
             File workflowDirectory = new File(workflowDirectoryName);
@@ -847,4 +906,62 @@ public class PostRetrieveProcessor extends SalesforceTask {
             return key;
         }
     }
+
+
+	class ValueSettingsComparator implements Comparator<Node> {
+		@Override
+		public int compare(Node n1, Node n2) {
+			String key1 = getKey(n1);
+			String key2 = getKey(n2);
+
+			return key1.compareTo(key2);
+		}
+
+		private String getKey(Node n) {
+			String key = "";
+			if (n.getNodeType() == Node.ELEMENT_NODE) {
+				Element e = (Element) n;
+				String valueName = ProcessorUtilities.getTagValue(e, "valueName");
+				key = valueName;
+			}
+
+			return key;
+		}
+	}
+
+	class PlatformActionComparator implements Comparator<Node> {
+		@Override
+		public int compare(Node n1, Node n2) {
+			Integer key1 = getKey(n1);
+			Integer key2 = getKey(n2);
+
+			return key1.compareTo(key2);
+		}
+
+		private Integer getKey(Node n) {
+			Integer key = 0;
+			if (n.getNodeType() == Node.ELEMENT_NODE) {
+				Element e = (Element) n;
+				String sortOrder = ProcessorUtilities.getTagValue(e, "sortOrder");
+				key = Integer.valueOf(sortOrder);
+			}
+
+			return key;
+		}
+	}
+
+	class TextNodeComparator implements Comparator<Node> {
+		@Override
+		public int compare(Node n1, Node n2) {
+			String key1 = getKey(n1);
+			String key2 = getKey(n2);
+
+			return key1.compareTo(key2);
+		}
+
+		private String getKey(Node n) {
+			String key = n.getTextContent();
+			return key;
+		}
+	}
 }
