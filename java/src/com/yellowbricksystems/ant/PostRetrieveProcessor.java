@@ -226,6 +226,7 @@ public class PostRetrieveProcessor extends SalesforceTask {
 								ProcessorUtilities.removeNodes(doc, permissionSetNode, removeNodes);
 							}
 						}
+						ProcessorUtilities.cleanDocument(doc, permissionSetNode);
 					}
 					// Always save so that we don't get "phantom" changes
 					ProcessorUtilities.saveDocument(doc, fullFileName);
@@ -331,6 +332,7 @@ public class PostRetrieveProcessor extends SalesforceTask {
 								ProcessorUtilities.removeNodes(doc, profileNode, removeNodes);
 							}
 						}
+						ProcessorUtilities.cleanDocument(doc, profileNode);
 					}
 					// Always save so that we don't get "phantom" changes
 					ProcessorUtilities.saveDocument(doc, fullFileName);
@@ -652,6 +654,7 @@ public class PostRetrieveProcessor extends SalesforceTask {
 							ProcessorUtilities.removeNodes(doc, objectNode, removeNodes);
 						}
 					}
+					ProcessorUtilities.cleanDocument(doc, objectNode);
 				}
 				// Always save so that we don't get "phantom" changes
 				ProcessorUtilities.saveDocument(doc, fullFileName);
