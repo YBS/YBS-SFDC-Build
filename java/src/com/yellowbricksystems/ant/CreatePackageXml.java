@@ -418,9 +418,7 @@ public class CreatePackageXml extends SalesforceTask {
 			addType(SF_INCLUDE_WORKFLOW_OUTBOUND_MESSAGES, "WorkflowOutboundMessage");
 			addType(SF_INCLUDE_WORKFLOW_RULES, "WorkflowRule");
 			addType(SF_INCLUDE_WORKFLOW_TASKS, "WorkflowTask");
-			addType(SF_INCLUDE_EVENT_DELIVERIES, "EventDelivery");
-			addType(SF_INCLUDE_EVENT_SUBSCRIPTIONS, "EventSubscription");
-			
+
 			// Einstein
 			addType(SF_INCLUDE_BOTS, "Bot");
 			addType(SF_INCLUDE_BOT_VERSIONS, "BotVersion");

@@ -3,6 +3,10 @@ YBS Build Release Notes
 
 v48.0:
 	- Updated build to use API version 48.0 (Spring '20)
+	- This version required Java 11 or later - must upgrade
+	- The following Metadata Types/Properties were removed:
+        - EventDelivery / sf.includeEventDeliveries
+        - EventSubscription / sf.includeEventSubscriptions
 	
 v45.2:
 	- Added the following additional post-retrieve processing sorting:

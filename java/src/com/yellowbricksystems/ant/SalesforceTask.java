@@ -254,9 +254,7 @@ public class SalesforceTask extends Task {
 	public static final String SF_INCLUDE_WORKFLOW_OUTBOUND_MESSAGES = "sf.includeWorkflowOutboundMessages";
 	public static final String SF_INCLUDE_WORKFLOW_RULES = "sf.includeWorkflowRules";
 	public static final String SF_INCLUDE_WORKFLOW_TASKS = "sf.includeWorkflowTasks";
-	public static final String SF_INCLUDE_EVENT_DELIVERIES = "sf.includeEventDeliveries";
-	public static final String SF_INCLUDE_EVENT_SUBSCRIPTIONS = "sf.includeEventSubscriptions";
-	
+
 	//Einstein
 	public static final String SF_INCLUDE_BOTS = "sf.includeBots";
 	public static final String SF_INCLUDE_BOT_VERSIONS = "sf.includeBotVersions";
