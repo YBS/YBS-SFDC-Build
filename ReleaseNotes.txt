@@ -1,5 +1,8 @@
 YBS Build Release Notes
 -----------------------
+v45.1a:
+	- Fix PostRetrieveProcessor to add cleanDocument statements to prevent extra blank lines with Java 11
+	
 v45.1:
 	- Updated post-retrieve processing to sort application overrides in customApplication metadata to
 	  prevent artifacts from different environments since Salesforce does not consistently sort by these
