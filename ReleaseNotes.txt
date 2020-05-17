@@ -1,5 +1,8 @@
 YBS Build Release Notes
 -----------------------
+v45.2a:
+	- Fix PostRetrieveProcessor to add cleanDocument statements to prevent extra blank lines with Java 11
+	
 v45.2:
 	- Added the following additional post-retrieve processing sorting:
 		- Layout: platformActionListItems
