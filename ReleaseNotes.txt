@@ -4,7 +4,14 @@ YBS Build Release Notes
 v48.0:
 	- Updated build to use API version 48.0 (Spring '20)
 	- This version required Java 11 or later - must upgrade
-	- The following Metadata Types/Properties were removed:
+	- The login.properties sf.serverurl property has been updated to no longer require the API
+	  version.  The new format should just be the domain name which should be one of the following two values:
+		https://test.salesforce.com
+		https://login.salesforce.com
+	- The CreatePackageXml process has been refactored to try to simplify the maintenance of the code.  The
+	  List Metadata calls have been updated to batch them in groups of 3.  The Create Package XML output has been
+	  updated to include the # of components added for each type.
+	- The following Metadata Types/Properties were removed because they are no longer supported:
         - EventDelivery / sf.includeEventDeliveries
         - EventSubscription / sf.includeEventSubscriptions
 

@@ -89,7 +89,7 @@ public class CreateDestructiveChangesXml extends SalesforceTask {
 				}
 			}
 
-			PackageUtilities.createPackageXmlFile(destructiveChangesFileName, asOfVersion, typesMap);
+			PackageUtilities.createPackageXmlFile(destructiveChangesFileName, API_VERSION, typesMap);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			throw new BuildException("Exception trying to generate destructiveChanges file.");

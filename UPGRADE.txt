@@ -49,8 +49,7 @@ API version.
 		- Find the dataloader-XX.0.0-uber.jar file in the installed directory and copy it to the lib 
 		directory and rename it DataLoader.jar.
 
-- Update the java CreatePackageXml.java and SalesforceTask.java and samplelogin.properties
-    to update the build and api version numbers.
+- Update the java SalesforceTask.java file to set the API_VERSION and BUILD_VERSION to their new values.
         - Build the YBS-ant.jar file
 
 - Update the ReleaseNotes.txt with the new build version notes.

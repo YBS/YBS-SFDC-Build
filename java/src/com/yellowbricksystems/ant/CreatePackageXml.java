@@ -33,11 +33,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -52,21 +50,15 @@ import com.sforce.soap.metadata.MetadataConnection;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.QueryResult;
 import com.sforce.soap.partner.sobject.SObject;
-import com.sforce.soap.tooling.ToolingConnection;
 import com.sforce.soap.tooling.sobject.ApexClass;
 import com.sforce.soap.tooling.sobject.ApexComponent;
 import com.sforce.soap.tooling.sobject.ApexPage;
 import com.sforce.soap.tooling.sobject.ApexTrigger;
 import com.sforce.soap.tooling.sobject.CustomField;
 import com.sforce.soap.tooling.sobject.Layout;
-import com.sforce.soap.tooling.sobject.RecordType;
 
 public class CreatePackageXml extends SalesforceTask {
 
-	public static final String BUILD_VERSION = "48.0";
-	
-	public static final String PERMISSION_SET_QUERY = "select Id,Name,NamespacePrefix from PermissionSet where ProfileId = null order by NamespacePrefix, Name";
-	
 	protected String packageFileName;
 	
 	protected Map<String, List<String>> typesMap = new HashMap<String, List<String>>();
@@ -108,40 +100,8 @@ public class CreatePackageXml extends SalesforceTask {
 		try
 		{
 			log("Creating package.xml using build version " + BUILD_VERSION);
-			
-			initSalesforceConnection();
-			
-			// Apex Types
-			addToolingType(SF_INCLUDE_CLASSES, "ApexClass");
-			addToolingType(SF_INCLUDE_COMPONENTS, "ApexComponent");
-			addToolingType(SF_INCLUDE_PAGES, "ApexPage");
-			addToolingType(SF_INCLUDE_TRIGGERS, "ApexTrigger");
-			addType(SF_INCLUDE_FLEXI_PAGES, "FlexiPage");
-			addType(SF_INCLUDE_FLOWS, "Flow");
-			addType(SF_INCLUDE_SCONTROLS, "Scontrol");
-			addType(SF_INCLUDE_STATIC_RESOURCES, "StaticResource");
-			addType(SF_INCLUDE_AURA_DEFINITION_BUNDLES, "AuraDefinitionBundle");
-			addType(SF_INCLUDE_PLATFORM_CACHE_PARTITIONS, "PlatformCachePartition");
-			addType(SF_INCLUDE_EMAIL_SERVICES_FUNCTIONS, "EmailServicesFunction");
 
-			// App Types
-			// The following block of objects work ok for Managed Packages, so bring them
-			// into the build, if required
-			addType(SF_INCLUDE_APP_MENUS, "AppMenu");
-			addType(SF_INCLUDE_CONNECTED_APPS, "ConnectedApp");
-			addType(SF_INCLUDE_APPLICATIONS, "CustomApplication");
-			addType(SF_INCLUDE_APPLICATION_COMPONENTS, "CustomApplicationComponent");
-			addType(SF_INCLUDE_LABELS, "CustomLabel");
-			addType(SF_INCLUDE_CUSTOM_PAGE_WEBLINKS, "CustomPageWebLink");
-			addType(SF_INCLUDE_TABS, "CustomTab");
-			addFolderType(SF_INCLUDE_DOCUMENTS, SF_INCLUDE_DOCUMENTS_FOLDER_PREFIX, SF_INCLUDE_DOCUMENTS_FOLDERS, 
-					null, "Document", "Document", "FolderId");
-			addType(SF_INCLUDE_HOME_PAGE_COMPONENTS, "HomePageComponent");
-			addType(SF_INCLUDE_HOME_PAGE_LAYOUTS, "HomePageLayout");
-			addType(SF_INCLUDE_INSTALLED_PACKAGES, "InstalledPackage");
-			addType(SF_INCLUDE_TRANSLATIONS, "Translations");
-			addType(SF_INCLUDE_CHATTER_EXTENSIONS, "ChatterExtension");
-			addType(SF_INCLUDE_LIGHTNING_BOLTS, "LightningBolt");
+			initSalesforceConnection();
 
 			// Object types
 			// Problem deploying if you break out objects into pieces.  We need to keep the objects whole
@@ -157,29 +117,45 @@ public class CreatePackageXml extends SalesforceTask {
 				// We are retrieving at least some Object component, so add the CustomObject metadata and it will
 				// be filtered later in Post-Retrieve
 				addObjects();
-
-				addType(SF_INCLUDE_CUSTOM_FIELDS, "CustomField");
-				// Can't use Tooling API for Custom Fields because deleted (and even erased)
-				// fields still come back in the query and cannot be filtered
-				//addObjectToolingType(SF_INCLUDE_CUSTOM_FIELDS, "CustomField");
-				addType(SF_INCLUDE_RECORD_TYPES, "RecordType");
-				addType(SF_INCLUDE_BUSINESS_PROCESSES, "BusinessProcess");
-				addType(SF_INCLUDE_COMPACT_LAYOUTS, "CompactLayout");
-				addType(SF_INCLUDE_FIELD_SETS, "FieldSet");
-				addType(SF_INCLUDE_LIST_VIEWS, "ListView", SF_INCLUDE_LIST_VIEWS_PREFIX);
-				addType(SF_INCLUDE_SHARING_REASONS, "SharingReason");
-				addType(SF_INCLUDE_VALIDATION_RULES, "ValidationRule");
-				addType(SF_INCLUDE_WEBLINKS, "WebLink");
 			}
-			
-			addType(SF_INCLUDE_OBJECT_TRANSLATIONS, "CustomObjectTranslation");
-			addType(SF_INCLUDE_EXTERNAL_DATA_SOURCES, "ExternalDataSource");
-			addType(SF_INCLUDE_LAYOUTS, "Layout");
-			addType(SF_INCLUDE_PUBLISHER_ACTIONS, "QuickAction");
-			addType(SF_INCLUDE_ACTION_LINK_GROUP_TEMPLATES, "ActionLinkGroupTemplate");
-			addType(SF_INCLUDE_CUSTOM_METADATA, "CustomMetadata");
-			addType(SF_INCLUDE_GLOBAL_VALUE_SETS, "GlobalValueSet");
-			addType(SF_INCLUDE_GLOBAL_VALUE_SET_TRANSLATIONS, "GlobalValueSetTranslation");
+
+			HashMap<String, PackageType> listMetadataPackageMap = new HashMap<String, PackageType>();
+			for (PackageType packageType : allPackageTypes) {
+				if (!getPropertyBoolean(packageType)) {
+					// Skip this type - it is not set in the salesforce.properties
+					continue;
+				}
+				if (packageType.addMethod == ADD_METHOD_LIST_METADATA) {
+					listMetadataPackageMap.put(packageType.metadataName, packageType);
+					if (listMetadataPackageMap.size() >= 3) {
+						addTypeFromListMetadata(listMetadataPackageMap);
+						listMetadataPackageMap.clear();
+					}
+
+				} else if (packageType.addMethod == ADD_METHOD_FOLDER) {
+					addFolderType(packageType.propertyName, packageType.prefixPropertyName, packageType.foldersPropertyName,
+							packageType.unfiledPublicPropertyName, packageType.folderType, packageType.metadataName, packageType.objectFolderFieldName);
+
+				} else if (packageType.addMethod == ADD_METHOD_TOOLING_API) {
+					addToolingType(packageType.propertyName, packageType.metadataName, packageType.prefixPropertyName);
+
+				} else if (packageType.addMethod == ADD_METHOD_SETTINGS) {
+					if (getPropertyBoolean(packageType.propertyName)) {
+						addTypeMember("Settings", packageType.metadataName, null);
+					}
+
+				} else if (packageType.addMethod == ADD_METHOD_QUERY) {
+					addQueryType(packageType.propertyName, packageType.metadataName, packageType.prefixPropertyName,
+							packageType.query, packageType.nameFieldName, packageType.namespaceFieldName);
+
+				}
+			}
+			if (listMetadataPackageMap.size() > 0) {
+				// Add any stragglers
+				addTypeFromListMetadata(listMetadataPackageMap);
+				listMetadataPackageMap.clear();
+			}
+
 			if (getPropertyBoolean(SF_INCLUDE_STANDARD_VALUE_SETS)) {
 				// Need to hard code Standard picklist values - no retrieve call to get them
 				addTypeMember("StandardValueSet", "AccountContactMultiRoles", null);
@@ -239,197 +215,35 @@ public class CreatePackageXml extends SalesforceTask {
 				addTypeMember("StandardValueSet", "WorkOrderStatus", null);
 				log("Added StandardValueSet");
 			}
-			addType(SF_INCLUDE_TOPICS_FOR_OBJECTS, "TopicsForObjects");
 
-			// Reporting
-			addType(SF_INCLUDE_ANALYTIC_SNAPSHOTS, "AnalyticSnapshot");
-			addFolderType(SF_INCLUDE_DASHBOARDS, SF_INCLUDE_DASHBOARDS_FOLDER_PREFIX, SF_INCLUDE_DASHBOARDS_FOLDERS, 
-					null, "Dashboard", "Dashboard", "FolderId");
-			addFolderType(SF_INCLUDE_REPORTS, SF_INCLUDE_REPORTS_FOLDER_PREFIX, SF_INCLUDE_REPORTS_FOLDERS, 
-					SF_INCLUDE_REPORTS_UNFILED_PUBLIC, "Report", "Report", "OwnerId");
-			addType(SF_INCLUDE_REPORT_TYPES, "ReportType");
-			addType(SF_INCLUDE_ANALYTIC_MAP_CHARTS, "EclairGeoData");
-			addType(SF_INCLUDE_WAVE_APPLICATIONS, "WaveApplication");
-			addType(SF_INCLUDE_WAVE_DASHBOARDS, "WaveDashboard");
-			addType(SF_INCLUDE_WAVE_DATAFLOWS, "WaveDataflow");
-			addType(SF_INCLUDE_WAVE_DATASETS, "WaveDataset");
-			addType(SF_INCLUDE_WAVE_LENSES, "WaveLens");
-			addType(SF_INCLDUE_WAVE_TEMPLATE_BUNDLES, "WaveTemplateBundle");
-			addType(SF_INCLUDE_WAVE_XMDS, "WaveXmd");
-
-			// Security/Admin Related
-			addType(SF_INCLUDE_PROFILES, "Profile", SF_INCLUDE_PROFILES_PREFIX);
-			addQueryType(SF_INCLUDE_PERMISSION_SETS, "PermissionSet", PERMISSION_SET_QUERY);
-			addType(SF_INCLUDE_ROLES, "Role");
-			addType(SF_INCLUDE_GROUPS, "Group");
-			addType(SF_INCLUDE_QUEUES, "Queue");
-			addType(SF_INCLUDE_TERRITORIES, "Territory");
-			addType(SF_INCLUDE_AUTH_PROVIDERS, "AuthProvider");
-			addType(SF_INCLUDE_REMOTE_SITE_SETTINGS, "RemoteSiteSetting");
-			addType(SF_INCLUDE_SAML_SSO_CONFIGS, "SamlSsoConfig");
-			addType(SF_INCLUDE_CUSTOM_PERMISSIONS, "CustomPermission");
-			addType(SF_INCLUDE_MATCHING_RULES, "MatchingRule");
-			addType(SF_INCLUDE_NAMED_CREDENTIALS, "NamedCredential");
-			addType(SF_INCLUDE_PATH_ASSISTANTS, "PathAssistant");
-			addType(SF_INCLUDE_SHARING_RULES, "SharingRules");
-			addType(SF_INCLUDE_SYNONYM_DICTIONARY, "SynonymDictionary");
-			addType(SF_INCLUDE_CERTIFICATES, "Certificate");
-			addType(SF_INCLUDE_CLEAN_DATA_SERVICES, "CleanDataService");
-			addType(SF_INCLUDE_CORS_WHITELIST_ORIGINS, "CorsWhitelistOrigin");
-			addType(SF_INCLUDE_DELEGATE_GROUPS, "DelegateGroup");
-			addType(SF_INCLUDE_DUPLICATE_RULES, "DuplicateRule");
-			addType(SF_INCLUDE_EXTERNAL_SERVICE_REGISTRATIONS, "ExternalServiceRegistration");
-			addType(SF_INCLUDE_PROFILE_PASSWORD_POLICIES, "ProfilePasswordPolicy");
-			addType(SF_INCLUDE_PROFILE_SESSION_SETTINGS, "ProfileSessionSetting");
-			addType(SF_INCLUDE_TERRITORIES2, "Territory2");
-			addType(SF_INCLUDE_TERRITORY2_MODELS, "Territory2Model");
-			addType(SF_INCLUDE_TERRITORY2_RULES, "Territory2Rule");
-			addType(SF_INCLUDE_TERRITORY2_TYPES, "Territory2Type");
-			addType(SF_INCLUDE_TRANSACTION_SECURITY_POLICIES, "TransactionSecurityPolicy");
-
-			// Service Types
-			addType(SF_INCLUDE_CALL_CENTERS, "CallCenter");
-			addType(SF_INCLUDE_DATA_CATEGORY_GROUPS, "DataCategoryGroup");
-			addType(SF_INCLUDE_ENTITLEMENT_TEMPLATES, "EntitlementTemplate");
-			addType(SF_INCLUDE_LIVE_CHAT_AGENT_CONFIGS, "LiveChatAgentConfig");
-			addType(SF_INCLUDE_LIVE_CHAT_BUTTONS, "LiveChatButton");
-			addType(SF_INCLUDE_LIVE_CHAT_DEPLOYMENTS, "LiveChatDeployment");
-			addType(SF_INCLUDE_MILESTONE_TYPES, "MilestoneType");
-			addType(SF_INCLUDE_SKILLS, "Skill");
-			addType(SF_INCLUDE_CASE_SUBJECT_PARTICLES, "CaseSubjectParticle");
-			addType(SF_INCLUDE_CUSTOM_FEED_FILTERS, "CustomFeedFilter");
-			addType(SF_INCLUDE_EMBEDDED_SERVICE_BRANDINGS, "EmbeddedServiceBranding");
-			addType(SF_INCLUDE_EMBEDDED_SERVICE_CONFIGS, "EmbeddedServiceConfig");
-			addType(SF_INCLUDE_EMBEDDED_SERVICE_LIVE_AGENTS, "EmbeddedServiceLiveAgent");
-			addType(SF_INCLUDE_ENTITLEMENT_PROCESSES, "EntitlementProcess");
-			addType(SF_INCLUDE_LIVE_CHAT_SENSITIVE_DATA_RULES, "LiveChatSensitiveDataRule");
-
-			// Settings
-			if (getPropertyBoolean(SF_INCLUDE_ACCOUNT_SETTINGS)) {
-				addTypeMember("Settings", "Account", null);
+			PackageUtilities.createPackageXmlFile(packageFileName, API_VERSION, typesMap);
+			if (getPropertyBoolean(SF_PRINT_UNUSED_TYPES)) {
+				printUnusedTypes();
 			}
-			if (getPropertyBoolean(SF_INCLUDE_ACTIVITIES_SETTINGS)) {
-				addTypeMember("Settings", "Activities", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_ADDRESS_SETTINGS)) {
-				addTypeMember("Settings", "Address", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_BUSINESS_HOURS_SETTINGS)) {
-				addTypeMember("Settings", "BusinessHours", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_CASE_SETTINGS)) {
-				addTypeMember("Settings", "Case", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_COMPANY_SETTINGS)) {
-				addTypeMember("Settings", "Company", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_CONTRACT_SETTINGS)) {
-				addTypeMember("Settings", "Contract", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_ENTITLEMENT_SETTINGS)) {
-				addTypeMember("Settings", "Entitlement", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_FILE_UPLOAD_AND_DOWNLOAD_SECURITY_SETTINGS)) {
-				addTypeMember("Settings", "FileUploadAndDownloadSecurity", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_FORECASTING_SETTINGS)) {
-				addTypeMember("Settings", "Forecasting", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_IDEAS_SETTINGS)) {
-				addTypeMember("Settings", "Ideas", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_KNOWLEDGE_SETTINGS)) {
-				addTypeMember("Settings", "Knowledge", null);
-			}
-			// Lead Convert Settings are different from other settings
-			addType(SF_INCLUDE_LEAD_CONVERT_SETTINGS, "LeadConvertSettings");
-			if (getPropertyBoolean(SF_INCLUDE_LIVE_AGENT_SETTINGS)) {
-				addTypeMember("Settings", "LiveAgent", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_MOBILE_SETTINGS)) {
-				addTypeMember("Settings", "Mobile", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_NAME_SETTINGS)) {
-				addTypeMember("Settings", "Name", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_OPPORTUNITY_SETTINGS)) {
-				addTypeMember("Settings", "Opportunity", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_ORDER_SETTINGS)) {
-				addTypeMember("Settings", "Order", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_ORG_PREFERENCE_SETTINGS)) {
-				addTypeMember("Settings", "OrgPreference", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_PATH_ASSISTANT_SETTINGS)) {
-				addTypeMember("Settings", "PathAssistant", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_PRODUCT_SETTINGS)) {
-				addTypeMember("Settings", "Product", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_QUOTE_SETTINGS)) {
-				addTypeMember("Settings", "Quote", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_SEARCH_SETTINGS)) {
-				addTypeMember("Settings", "Search", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_SECURITY_SETTINGS)) {
-				addTypeMember("Settings", "Security", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_SOCIAL_CUSTOMER_SERVICE_SETTINGS)) {
-				addTypeMember("Settings", "SocialCustomerService", null);
-			}
-			if (getPropertyBoolean(SF_INCLUDE_TERRITORY2_SETTINGS)) {
-				addTypeMember("Settings", "Territory2", null);
-			}
-
-			//Sites
-			addType(SF_INCLUDE_COMMUNITIES, "Community");
-			addType(SF_INCLUDE_SITES, "CustomSite");
-			addType(SF_INCLUDE_NETWORKS, "Network");
-			addType(SF_INCLUDE_PORTALS, "Portal");
-			addType(SF_INCLUDE_SHARING_SETS, "SharingSet");
-			addType(SF_INCLUDE_SITE_DOT_COMS, "SiteDotCom");
-			addType(SF_INCLUDE_BRANDING_SETS, "BrandingSet");
-			addType(SF_INCLUDE_CMS_CONNECT_SOURCES, "CMSConnectSource");
-			addType(SF_INCLUDE_COMMUNITY_TEMPLATE_DEFINITIONS, "CommunityTemplateDefinition");
-			addType(SF_INCLUDE_COMMUNITY_THEME_DEFINITIONS, "CommunityThemeDefinition");
-			addType(SF_INCLUDE_CONTENT_ASSETS, "ContentAsset");
-			addType(SF_INCLUDE_KEYWORD_LISTS, "KeywordList");
-			addType(SF_INCLUDE_MANAGED_TOPICS, "ManagedTopics");
-			addType(SF_INCLUDE_MODERATION_RULES, "ModerationRule");
-			addType(SF_INCLUDE_NETWORK_BRANDINGS, "NetworkBranding");
-			addType(SF_INCLUDE_AUDIENCES, "Audience");
-			addType(SF_INCLUDE_LIGHTNING_EXPERIENCE_THEMES, "LightningExperienceTheme");
-
-			// Workflows
-			addType(SF_INCLUDE_APPROVAL_PROCESSES, "ApprovalProcess");
-			addType(SF_INCLUDE_ASSIGNMENT_RULES, "AssignmentRule");
-			addType(SF_INCLUDE_AUTO_RESPONSE_RULES, "AutoResponseRules");
-			addFolderType(SF_INCLUDE_EMAILS, SF_INCLUDE_EMAILS_FOLDER_PREFIX, SF_INCLUDE_EMAILS_FOLDERS, 
-					SF_INCLUDE_EMAILS_UNFILED_PUBLIC, "Email", "EmailTemplate", "FolderId");
-			addType(SF_INCLUDE_LETTERHEADS, "Letterhead");
-			addType(SF_INCLUDE_POST_TEMPLATES, "PostTemplate");
-			addType(SF_INCLUDE_WORKFLOWS, "Workflow"); // Backwards compatibility
-			addType(SF_INCLUDE_WORKFLOW_ALERTS, "WorkflowAlert");
-			addType(SF_INCLUDE_WORKFLOW_FIELD_UPDATES, "WorkflowFieldUpdate");
-			addType(SF_INCLUDE_WORKFLOW_FLOW_ACTIONS, "WorkflowFlowAction");
-			addType(SF_INCLUDE_WORKFLOW_KNOWLEDGE_PUBLISHES, "WorkflowKnowledgePublish");
-			addType(SF_INCLUDE_WORKFLOW_OUTBOUND_MESSAGES, "WorkflowOutboundMessage");
-			addType(SF_INCLUDE_WORKFLOW_RULES, "WorkflowRule");
-			addType(SF_INCLUDE_WORKFLOW_TASKS, "WorkflowTask");
-
-			// Einstein
-			addType(SF_INCLUDE_BOTS, "Bot");
-			addType(SF_INCLUDE_BOT_VERSIONS, "BotVersion");
-			addType(SF_INCLUDE_MI_DOMAINS, "MIDomain");
-
-
-			PackageUtilities.createPackageXmlFile(packageFileName, asOfVersion, typesMap);
 		}
 		catch (IOException ioe)
 		{
 			throw new BuildException("Error trying to write package.xml file");
+		}
+	}
+
+	protected void printUnusedTypes() {
+		ArrayList<PackageType> unusedTypes = new ArrayList<PackageType>();
+		for (PackageType packageType : allPackageTypes) {
+			if (getPropertyBoolean(packageType) && packageType.addMethod != ADD_METHOD_SETTINGS) {
+				// This type is being included in the build, let's see if we added any
+				// metadata for it
+				List<String> types = typesMap.get(packageType.metadataName);
+				if (types == null || types.size() == 0) {
+					unusedTypes.add(packageType);
+				}
+			}
+		}
+		if (unusedTypes.size() > 0) {
+			log("The following types were included in the build but there were no matching values.  You may want to exclude them from the build to save time.");
+			for (PackageType packageType : unusedTypes) {
+				log("    " + packageType.metadataName + " (" + packageType.propertyName + ")");
+			}
 		}
 	}
 
@@ -446,22 +260,41 @@ public class CreatePackageXml extends SalesforceTask {
 		}
 	}
 
-	protected void addTypeFromListMetadata(String typeName, String memberPrefix) throws IOException {
+	protected void addTypeFromListMetadata(HashMap<String, PackageType> packageTypeMap) throws IOException {
+		String listTypes = "";
 		try {
 			long startTime = System.nanoTime();
 			MetadataConnection metaConnection = getMetadataConnection();
-			ListMetadataQuery query = new ListMetadataQuery();
-			query.setType(typeName);
+
+			HashMap<String, Integer> typeCountMap = new HashMap<String, Integer>();
+			ArrayList<ListMetadataQuery> queries = new ArrayList<ListMetadataQuery>();
+			String clause = "";
+			for (PackageType packageType : packageTypeMap.values()) {
+				ListMetadataQuery query = new ListMetadataQuery();
+				query.setType(packageType.metadataName);
+				queries.add(query);
+
+				// Pre-load the memberPrefix so we only do it once
+				setMemberPrefix(packageType);
+
+				listTypes += clause + packageType.metadataName;
+				clause = ", ";
+
+				typeCountMap.put(packageType.metadataName, 0);
+			}
 
             FileProperties[] properties;
             try {
-                properties = metaConnection.listMetadata(new ListMetadataQuery[] {query}, asOfVersion);
+                properties = metaConnection.listMetadata(queries.toArray(new ListMetadataQuery[0]), API_VERSION);
             } catch (Exception ex1) {
                 // Retry once
                 log("Retrying List Metadata call...");
-                properties = metaConnection.listMetadata(new ListMetadataQuery[] {query}, asOfVersion);
+				properties = metaConnection.listMetadata(queries.toArray(new ListMetadataQuery[0]), API_VERSION);
             }
 			for (FileProperties p : properties) {
+				String typeName = p.getType();
+				PackageType packageType = packageTypeMap.get(typeName);
+
 				String namespace = p.getNamespacePrefix();
 				if (managedPackageTypes.contains(typeName) || namespace == null || namespace.trim().length() == 0) {
 					String fullName = p.getFullName();
@@ -476,64 +309,53 @@ public class CreatePackageXml extends SalesforceTask {
 						}
 						matchName = splitNames[1];
 					}
-					if (memberPrefix == null || memberPrefix.trim().length() == 0 ||
-							matchName.startsWith(memberPrefix)) {
+					if (packageType.memberPrefix == null || packageType.memberPrefix.trim().length() == 0 ||
+							matchName.startsWith(packageType.memberPrefix)) {
 						addTypeMember(typeName, fullName, namespace);
+						int typeCount = typeCountMap.get(typeName);
+						++typeCount;
+						typeCountMap.put(typeName, typeCount);
 					}
 				}
 			}
 			long elapsedTime = System.nanoTime() - startTime;
-			log("Added " + typeName + " from List Metadata [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
+			String logMessage = "Added ";
+			clause = "";
+			for (PackageType packageType : packageTypeMap.values()) {
+				int typeCount = typeCountMap.get(packageType.metadataName);
+				logMessage += clause + packageType.metadataName + " (" + typeCount + ")";
+				clause = ", ";
+			}
+			logMessage += " from List Metadata [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]";
+			log(logMessage);
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			throw new BuildException("Exception trying to add " + typeName + " components.");
+			throw new BuildException("Exception trying to add " + listTypes + " List Metadata components.");
 		}
 	}
 
-	protected void addType(String propertyName, String typeName) throws IOException{
-		addType(propertyName, typeName, null);
-	}
-
-	protected void addType(String propertyName, String typeName, String memberPrefixPropertyName) throws IOException{
+	protected void addQueryType(String propertyName, String typeName, String memberPrefixPropertyName, String query, String nameFieldName, String namespaceFieldName) throws IOException{
 		String memberPrefix = null;
 		if (memberPrefixPropertyName != null) {
 			memberPrefix = getProject().getProperty(memberPrefixPropertyName);
 		}
 
 		if (getPropertyBoolean(propertyName)) {
-			addTypeFromListMetadata(typeName, memberPrefix);
+			addTypeFromQuery(typeName, memberPrefix, query, nameFieldName, namespaceFieldName);
 		}
 	}
 	
-	protected void addQueryType(String propertyName, String typeName, String query) throws IOException{
-		addQueryType(propertyName, typeName, query, null);
-	}
-
-	protected void addQueryType(String propertyName, String typeName, String query, String memberPrefixPropertyName) throws IOException{
-		String memberPrefix = null;
-		if (memberPrefixPropertyName != null) {
-			memberPrefix = getProject().getProperty(memberPrefixPropertyName);
-		}
-
-		if (getPropertyBoolean(propertyName)) {
-			addTypeFromQuery(typeName, memberPrefix, query);
-		}
-	}
-	
-	protected void addTypeFromQuery(String typeName, String memberPrefix, String query) throws IOException {
+	protected void addTypeFromQuery(String typeName, String memberPrefix, String query, String nameFieldName, String namespaceFieldName) throws IOException {
 		try {
 			long startTime = System.nanoTime();
+			int typeCount = 0;
 			Boolean done = false;
 			com.sforce.soap.partner.QueryResult qr = partnerConnection.query(query);
 			while (!done) {
 				com.sforce.soap.partner.sobject.SObject[] records = qr.getRecords();
 				for (com.sforce.soap.partner.sobject.SObject so : records) {
-					String name = null;
-					String namespacePrefix = null;
-					if (typeName.equals("PermissionSet")) {
-						name = (String) so.getField("Name");
-						namespacePrefix = (String) so.getField("NamespacePrefix");
-					}
+					String name = (String) so.getField(nameFieldName);
+					String namespacePrefix = (String) so.getField(namespaceFieldName);
 					if (name != null) {
 						if (managedPackageTypes.contains(typeName) || namespacePrefix == null || namespacePrefix.trim().length() == 0) {
 							String fullName = name;
@@ -544,6 +366,7 @@ public class CreatePackageXml extends SalesforceTask {
 							if (memberPrefix == null || memberPrefix.trim().length() == 0 ||
 									matchName.startsWith(memberPrefix)) {
 								addTypeMember(typeName, fullName, namespacePrefix);
+								++typeCount;
 							}
 						}
 					}
@@ -555,7 +378,7 @@ public class CreatePackageXml extends SalesforceTask {
 				}
 			}
 			long elapsedTime = System.nanoTime() - startTime;
-			log("Added " + typeName + " from SOQL query [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
+			log("Added " + typeName + " (" + typeCount + ") from SOQL query [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			throw new BuildException("Exception trying to add " + typeName + " components.");
@@ -573,7 +396,7 @@ public class CreatePackageXml extends SalesforceTask {
 			ListMetadataQuery query = new ListMetadataQuery();
 			query.setType("CustomObject");
 			
-			FileProperties[] properties = metadataConnection.listMetadata(new ListMetadataQuery[] {query}, asOfVersion);
+			FileProperties[] properties = metadataConnection.listMetadata(new ListMetadataQuery[] {query}, API_VERSION);
 			for (FileProperties p : properties) {
 				String namespace = p.getNamespacePrefix();
 				if (managedPackageTypes.contains("CustomObject") || namespace == null || namespace.trim().length() == 0) {
@@ -613,6 +436,7 @@ public class CreatePackageXml extends SalesforceTask {
 	protected void addObjectTypeFromToolingQuery(String typeName) throws BuildException {
 		try {
 			long startTime = System.nanoTime();
+			int typeCount = 0;
 			Map<String, List<com.sforce.soap.tooling.sobject.SObject>> objectResultMap = new HashMap<String, List<com.sforce.soap.tooling.sobject.SObject>>();
 			String query = "select Id, DeveloperName, TableEnumOrId, NamespacePrefix from CustomField order by DeveloperName";
 			if (typeName.equals("Layout")) {
@@ -679,12 +503,13 @@ public class CreatePackageXml extends SalesforceTask {
 								fullName = encodePackageMember(fullName);
 							}
 							addTypeMember(typeName, fullName, namespace);
+							++typeCount;
 						}
 					}
 				}
 			}
 			long elapsedTime = System.nanoTime() - startTime;
-			log("Added " + typeName + " from Tooling query [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
+			log("Added " + typeName + " (" + typeCount + ") from Tooling query [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			throw new BuildException("Exception trying to add " + typeName + " components.");
@@ -798,6 +623,7 @@ public class CreatePackageXml extends SalesforceTask {
 		if (getPropertyBoolean(includePropertyName)) {
 			try {
 				long startTime = System.nanoTime();
+				int typeCount = 0;
 				PartnerConnection connection = getPartnerConnection();
 				
 				HashSet<String> includeFolders = new HashSet<String>();
@@ -818,6 +644,7 @@ public class CreatePackageXml extends SalesforceTask {
 						folderName = folderNamespacePrefix + "__" + folderName;
 					}
 					addTypeMember(objectName, folderName, folderNamespacePrefix);
+					++typeCount;
 
 					String soql = "select Id, DeveloperName, NamespacePrefix from " + objectName + " where " +
 							objectFolderFieldName + "='" + folderId + "' ";
@@ -830,6 +657,7 @@ public class CreatePackageXml extends SalesforceTask {
 							developerName = namespacePrefix + "__" + developerName;
 						}
 						addTypeMember(objectName, folderName + "/" + developerName, namespacePrefix);
+						++typeCount;
 					}
 				}
 
@@ -843,10 +671,11 @@ public class CreatePackageXml extends SalesforceTask {
 					for (SObject so : sobjects) {
 						String developerName = (String) so.getField("DeveloperName");
 						addTypeMember(objectName, "unfiled$public/" + developerName, null);
+						++typeCount;
 					}
 				}
 				long elapsedTime = System.nanoTime() - startTime;
-				log("Added " + objectName + " from SOQL query [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
+				log("Added " + objectName + " (" + typeCount + ") from SOQL query [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				throw new BuildException("Exception retrieving folder list.");
@@ -907,47 +736,47 @@ public class CreatePackageXml extends SalesforceTask {
 			testProject.setProperty(SF_SERVER_URL_PROPERTY_NAME, loginProperties.getProperty(SF_SERVER_URL_PROPERTY_NAME));
 
 			// Create Settings
-			testProject.setProperty(SF_INCLUDE_CLASSES, "yEs");
-			testProject.setProperty(SF_INCLUDE_COMPONENTS, "trUE");
-			testProject.setProperty(SF_INCLUDE_PAGES, "yEs");
-			testProject.setProperty(SF_INCLUDE_TRIGGERS, "trUE");
-			testProject.setProperty(SF_INCLUDE_APPLICATIONS, "yEs");
-			testProject.setProperty(SF_INCLUDE_LABELS, "yEs");
-			testProject.setProperty(SF_INCLUDE_BUSINESS_PROCESSES, "trUE");
-			testProject.setProperty(SF_INCLUDE_CUSTOM_FIELDS, "trUE");
-			testProject.setProperty(SF_INCLUDE_FIELD_SETS, "trUE");
-			testProject.setProperty(SF_INCLUDE_LIST_VIEWS, "trUE");
-			testProject.setProperty(SF_INCLUDE_LIST_VIEWS_PREFIX, "A_");
-			testProject.setProperty(SF_INCLUDE_RECORD_TYPES, "trUE");
-			testProject.setProperty(SF_INCLUDE_SHARING_REASONS, "trUE");
-			testProject.setProperty(SF_INCLUDE_VALIDATION_RULES, "trUE");
-			testProject.setProperty(SF_INCLUDE_WEBLINKS, "trUE");
-			testProject.setProperty(SF_INCLUDE_OBJECT_TRANSLATIONS, "yEs");
-			testProject.setProperty(SF_INCLUDE_CUSTOM_PAGE_WEBLINKS, "yEs");
-			testProject.setProperty(SF_INCLUDE_SITES, "yEs");
-			testProject.setProperty(SF_INCLUDE_TABS, "yEs");
-			testProject.setProperty(SF_INCLUDE_DASHBOARDS, "yEs");
-			testProject.setProperty(SF_INCLUDE_DASHBOARDS_FOLDER_PREFIX, "Test_");
-			testProject.setProperty(SF_INCLUDE_DATA_CATEGORY_GROUPS, "yEs");
-			testProject.setProperty(SF_INCLUDE_DOCUMENTS, "yEs");
-			testProject.setProperty(SF_INCLUDE_DOCUMENTS_FOLDER_PREFIX, "");
-			testProject.setProperty(SF_INCLUDE_EMAILS, "yEs");
-			testProject.setProperty(SF_INCLUDE_EMAILS_FOLDER_PREFIX, "");
-			testProject.setProperty(SF_INCLUDE_EMAILS_UNFILED_PUBLIC, "true");
-			testProject.setProperty(SF_INCLUDE_HOME_PAGE_COMPONENTS, "yEs");
-			testProject.setProperty(SF_INCLUDE_HOME_PAGE_LAYOUTS, "yEs");
-			testProject.setProperty(SF_INCLUDE_LAYOUTS, "yEs");
-			testProject.setProperty(SF_INCLUDE_LETTERHEADS, "yEs");
-			testProject.setProperty(SF_INCLUDE_PROFILES, "yEs");
-			testProject.setProperty(SF_INCLUDE_PROFILES_PREFIX, "%28");
-			testProject.setProperty(SF_INCLUDE_REMOTE_SITE_SETTINGS, "yEs");
-			testProject.setProperty(SF_INCLUDE_REPORTS, "yEs");
-			testProject.setProperty(SF_INCLUDE_REPORTS_FOLDER_PREFIX, "");
-			testProject.setProperty(SF_INCLUDE_REPORTS_UNFILED_PUBLIC, "true");
-			testProject.setProperty(SF_INCLUDE_REPORT_TYPES, "yEs");
-			testProject.setProperty(SF_INCLUDE_SCONTROLS, "yEs");
-			testProject.setProperty(SF_INCLUDE_STATIC_RESOURCES, "yEs");
-			testProject.setProperty(SF_INCLUDE_WORKFLOWS, "yEs");
+			testProject.setProperty(SF_INCLUDE_CLASSES.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_COMPONENTS.propertyName, "trUE");
+			testProject.setProperty(SF_INCLUDE_PAGES.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_TRIGGERS.propertyName, "trUE");
+			testProject.setProperty(SF_INCLUDE_APPLICATIONS.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_LABELS.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_BUSINESS_PROCESSES.propertyName, "trUE");
+			testProject.setProperty(SF_INCLUDE_CUSTOM_FIELDS.propertyName, "trUE");
+			testProject.setProperty(SF_INCLUDE_FIELD_SETS.propertyName, "trUE");
+			testProject.setProperty(SF_INCLUDE_LIST_VIEWS.propertyName, "trUE");
+			testProject.setProperty(SF_INCLUDE_LIST_VIEWS.prefixPropertyName, "A_");
+			testProject.setProperty(SF_INCLUDE_RECORD_TYPES.propertyName, "trUE");
+			testProject.setProperty(SF_INCLUDE_SHARING_REASONS.propertyName, "trUE");
+			testProject.setProperty(SF_INCLUDE_VALIDATION_RULES.propertyName, "trUE");
+			testProject.setProperty(SF_INCLUDE_WEBLINKS.propertyName, "trUE");
+			testProject.setProperty(SF_INCLUDE_OBJECT_TRANSLATIONS.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_CUSTOM_PAGE_WEBLINKS.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_SITES.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_TABS.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_DASHBOARDS.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_DASHBOARDS.prefixPropertyName, "Test_");
+			testProject.setProperty(SF_INCLUDE_DATA_CATEGORY_GROUPS.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_DOCUMENTS.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_DOCUMENTS.prefixPropertyName, "");
+			testProject.setProperty(SF_INCLUDE_EMAILS.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_EMAILS.prefixPropertyName, "");
+			testProject.setProperty(SF_INCLUDE_EMAILS.unfiledPublicPropertyName, "true");
+			testProject.setProperty(SF_INCLUDE_HOME_PAGE_COMPONENTS.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_HOME_PAGE_LAYOUTS.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_LAYOUTS.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_LETTERHEADS.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_PROFILES.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_PROFILES.prefixPropertyName, "%28");
+			testProject.setProperty(SF_INCLUDE_REMOTE_SITE_SETTINGS.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_REPORTS.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_REPORTS.prefixPropertyName, "");
+			testProject.setProperty(SF_INCLUDE_REPORTS.unfiledPublicPropertyName, "true");
+			testProject.setProperty(SF_INCLUDE_REPORT_TYPES.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_SCONTROLS.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_STATIC_RESOURCES.propertyName, "yEs");
+			testProject.setProperty(SF_INCLUDE_WORKFLOWS.propertyName, "yEs");
 
 			// Ignore settings
 			testProject.setProperty(SF_IGNORE_PREFIX, "Case.Email-to-Case;Lead.STOP EMAIL");
@@ -965,4 +794,5 @@ public class CreatePackageXml extends SalesforceTask {
 			ex.printStackTrace();
 		}
 	}
+
 }
