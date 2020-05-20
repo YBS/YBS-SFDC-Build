@@ -28,9 +28,8 @@ SOFTWARE.
  */
 package com.yellowbricksystems.ant;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Hashtable;
+import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.tools.ant.BuildException;
@@ -59,11 +58,30 @@ public class SalesforceTask extends Task {
 
 	public static final String SF_PRINT_UNUSED_TYPES = "sf.printUnusedTypes";
 
-	protected HashSet<String> ignoreList = new HashSet<String>();
-	protected HashSet<String> packageIgnoreList = new HashSet<String>();
-	
 	protected HashSet<String> managedPackageTypes = new HashSet<String>();
-	
+
+	/*
+		The following variables are used to replace the existing ignore approach.  The new approach allows
+		for metadata types to be either ignored (using the ignorePackage.xml file) or specifically
+		included (using the includePackage.xml file).  If a type is listed in the includePackage.xml file
+		then only the specific members that are included for that type will be included in the package.xml
+		file (if they exist).  The includePackage.xml file will take precedence over the ignorePackage.xml -
+		if a type exists in includePackage.xml then the members of that type included in ignorePackage.xml
+		will not be used.
+	*/
+	public static final String INCLUDE_PACKAGE_XML_FILENAME = "includePackage.xml";
+	protected Map<String, List<String>> includeTypesMap = new HashMap<String, List<String>>();
+	public static final String IGNORE_PACKAGE_XML_FILENAME = "ignorePackage.xml";
+	protected Map<String, List<String>> ignoreTypesMap = new HashMap<String, List<String>>();
+	public static final String[] IGNORE_PACKAGE_XML_COMMENTS = new String[] {
+			IGNORE_PACKAGE_XML_FILENAME,
+			"This file is used to list out the metadata components that should be ignored during a ",
+			"retrieve.  This file replaces the sf.ignore* and sf.package.ignore* values in the ",
+			"salesforce.properties file.  If the " + INCLUDE_PACKAGE_XML_FILENAME + " file is also",
+			"being used then any types that have values in the include file will only use the include",
+			"logic and will not look at the ignore members for that type."
+	};
+
 	// Property Names for salesforce.properties file to control metadata that is
 	// retrieved/deployed
 	
@@ -74,6 +92,7 @@ public class SalesforceTask extends Task {
 	public static final int ADD_METHOD_TOOLING_API = 2;
 	public static final int ADD_METHOD_SETTINGS = 3;
 	public static final int ADD_METHOD_QUERY = 4;
+	public static final int ADD_METHOD_PACKAGE = 5; // InstalledPackage can't be added
 
 	public static ArrayList<PackageType> allPackageTypes = new ArrayList<PackageType>();
 	
@@ -102,7 +121,7 @@ public class SalesforceTask extends Task {
 			"sf.includeDocumentsFolderPrefix", "sf.includeDocumentsFolders", null, "Document", "FolderId");
 	public static final PackageType SF_INCLUDE_HOME_PAGE_COMPONENTS = new PackageType("sf.includeHomePageComponents", "HomePageComponent");
 	public static final PackageType SF_INCLUDE_HOME_PAGE_LAYOUTS = new PackageType("sf.includeHomePageLayouts", "HomePageLayout");
-	public static final PackageType SF_INCLUDE_INSTALLED_PACKAGES = new PackageType("sf.includeInstalledPackages", "InstalledPackage");
+	public static final PackageType SF_INCLUDE_INSTALLED_PACKAGES = new PackageType("sf.includeInstalledPackages", "InstalledPackage", ADD_METHOD_PACKAGE);
 	public static final PackageType SF_INCLUDE_TRANSLATIONS = new PackageType("sf.includeTranslations", "Translations");
 	public static final PackageType SF_INCLUDE_CHATTER_EXTENSIONS = new PackageType("sf.includeChatterExtensions", "ChatterExtension");
 	public static final PackageType SF_INCLUDE_LIGHTNING_BOLTS = new PackageType("sf.includeLightningBolts", "LightningBolt");
@@ -291,7 +310,7 @@ public class SalesforceTask extends Task {
 
 	@Override
 	public void init() throws BuildException {
-		loadIgnoreValues();
+		loadIncludeIgnorePackageFiles();
 		loadManagedPackageTypes();
 		
 		super.init();
@@ -331,35 +350,96 @@ public class SalesforceTask extends Task {
 			}
 		}
 	}
-	
-	protected void loadIgnoreValues() {
-		ignoreList.clear();
-		packageIgnoreList.clear();
 
-		@SuppressWarnings("unchecked")
-		Hashtable<String, String> projectProperties = (Hashtable<String, String>) getProject().getProperties();
-		for (String propertyKey : projectProperties.keySet()) {
-			if (propertyKey != null && propertyKey.startsWith(SF_IGNORE_PREFIX)) {
-				// This is an ignore property
-				String ignoreProperty = projectProperties.get(propertyKey);
-				if (ignoreProperty != null && ignoreProperty.trim().length() > 0) {
-					for (String ignore : ignoreProperty.split(";")) {
-						ignoreList.add(ignore);
+	protected void loadIncludeIgnorePackageFiles() {
+		try {
+			String basedir = getProject().getProperty("basedir");
+
+			includeTypesMap = PackageUtilities.parsePackageXmlFile(basedir + "/" + INCLUDE_PACKAGE_XML_FILENAME);
+			ignoreTypesMap = PackageUtilities.parsePackageXmlFile(basedir + "/" + IGNORE_PACKAGE_XML_FILENAME);
+
+			/*
+				The following logic was taken from the original loadIgnoreValues() to pull in ignore and packageIgnore
+				settings from the salesforce.properties file.  Those values will now be merged into the new
+				ignorePackageXml and saved.
+			 */
+			int ignoreCount = 0;
+			@SuppressWarnings("unchecked")
+			Hashtable<String, String> projectProperties = (Hashtable<String, String>) getProject().getProperties();
+			for (String propertyKey : projectProperties.keySet()) {
+				String typeName = null;
+				String memberName = null;
+				if (propertyKey != null && propertyKey.startsWith(SF_IGNORE_PREFIX)) {
+					// This is an ignore property
+					String ignoreProperty = projectProperties.get(propertyKey);
+					if (ignoreProperty != null && ignoreProperty.trim().length() > 0) {
+						for (String ignore : ignoreProperty.split(";")) {
+							String[] parts = ignore.split("\\.", 2);
+							if (parts != null && parts.length == 2) {
+								// Valid ignore, so add it if it doesn't already exist
+								if (addIgnoreMember(parts[0], parts[1])) {
+									++ignoreCount;
+								}
+							}
+						}
+					}
+				}
+				if (propertyKey != null && propertyKey.startsWith(SF_PACKAGE_IGNORE_PREFIX)) {
+					// This is a package ignore property
+					String ignoreProperty = projectProperties.get(propertyKey);
+					if (ignoreProperty != null && ignoreProperty.trim().length() > 0) {
+						for (String ignore : ignoreProperty.split(";")) {
+							if (addIgnoreMember(SF_INCLUDE_INSTALLED_PACKAGES.metadataName, ignore)) {
+								++ignoreCount;
+							}
+						}
 					}
 				}
 			}
-			if (propertyKey != null && propertyKey.startsWith(SF_PACKAGE_IGNORE_PREFIX)) {
-				// This is a package ignore property
-				String ignoreProperty = projectProperties.get(propertyKey);
-				if (ignoreProperty != null && ignoreProperty.trim().length() > 0) {
-					for (String ignore : ignoreProperty.split(";")) {
-						packageIgnoreList.add(ignore);
-					}
+			// Check to see if there are any include + ignore values
+			for (String includeType : includeTypesMap.keySet()) {
+				List<String> includeMembers = includeTypesMap.get(includeType);
+				List<String> ignoreMembers = ignoreTypesMap.get(includeType);
+				if (includeMembers != null && includeMembers.size() > 0 &&
+						ignoreMembers != null && ignoreMembers.size() > 0) {
+					log("*** There are both include and ignore settings for " + includeType + " ***");
 				}
+			}
+			if (ignoreCount > 0) {
+				// Write out the new/updated ignorePackage.xml file
+				PackageUtilities.createPackageXmlFile(basedir + "/" + IGNORE_PACKAGE_XML_FILENAME, API_VERSION, ignoreTypesMap, IGNORE_PACKAGE_XML_COMMENTS);
+				log("");
+				log("**************************************************************************************");
+				log("There were " + ignoreCount + " " + SF_IGNORE_PREFIX + " and " + SF_PACKAGE_IGNORE_PREFIX);
+				log("values that were copied from the salesforce.properties file to the " + IGNORE_PACKAGE_XML_FILENAME);
+				log("file.  You can remove these settings from the salesforce.properties file.");
+				log("**************************************************************************************");
+				log("");
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new BuildException("Error trying to connect to Salesforce.");
+		}
+
+	}
+
+	protected boolean addIgnoreMember(String typeName, String memberName) {
+		boolean added = false;
+		if (typeName != null && memberName != null) {
+			// Add it to the ignoreTypesMap
+			List<String> memberList = ignoreTypesMap.get(typeName);
+			if (memberList == null) {
+				memberList = new ArrayList<String>();
+				ignoreTypesMap.put(typeName, memberList);
+			}
+			if (!memberList.contains(memberName)) {
+				memberList.add(memberName);
+				added = true;
 			}
 		}
+		return added;
 	}
-	
+
 	protected void loadManagedPackageTypes() {
 		managedPackageTypes.clear();
 		
@@ -370,6 +450,67 @@ public class SalesforceTask extends Task {
 			}
 		}
 		
+	}
+
+	protected boolean includeMetadata(String typeName, String memberName, String namespace) {
+		// First check to see if this namespace/typeName is allowed
+		if (namespace != null && namespace.trim().length() > 0) {
+			// This member is in a namespace so check to see if the namespace/type are allowed
+			if (!managedPackageTypes.contains(typeName)) {
+				// This type is not allowed for managed packages
+				return false;
+			}
+
+			if (!getIncludeIgnore(SF_INCLUDE_INSTALLED_PACKAGES.metadataName, namespace)) {
+				// This namespace is either not included or is ignored
+				return false;
+			}
+		}
+
+		// At this point we have validated the namespace, so check the type/member
+		if (!getIncludeIgnore(typeName, memberName)) {
+			// This type/member is either not included or is ignored
+			return false;
+		}
+
+		// Check to see if this is an "Object" type (i.e. has an Object name as the prefix) and determine
+		// whether the associated Object is being included
+		if (memberName.contains(".") || memberName.contains("-")) {
+			String objectName = null;
+			if (memberName.contains(".")) {
+				objectName = memberName.split("\\.", 2)[0];
+			} else {
+				objectName = memberName.split("-", 2)[0];
+			}
+			if (!getIncludeIgnore("CustomObject", objectName)) {
+				// The related object is either not included or is ignored
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private boolean getIncludeIgnore(String typeName, String memberName) {
+		boolean include = true;
+
+		List<String> typeIncludeList = includeTypesMap.get(typeName);
+		if (typeIncludeList != null && typeIncludeList.size() > 0) {
+			// This Type is managed through the include list so check to see if it is included
+			if (!typeIncludeList.contains(memberName)) {
+				// This member is not included
+				include = false;
+			}
+		} else {
+			// This Type is managed through the ignore list so check to see if it is ignored
+			List<String> typeIgnoreList = ignoreTypesMap.get(typeName);
+			if (typeIgnoreList != null && typeIgnoreList.contains(memberName)) {
+				// This member is being ignored
+				include = false;
+			}
+		}
+
+		return include;
 	}
 	
 	protected void initSalesforceConnection() {

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+<!-- 
+    ignorePackage.xml
+    This file is used to list out the metadata components that should be ignored during a 
+    retrieve.  This file replaces the sf.ignore* and sf.package.ignore* values in the 
+    salesforce.properties file.  If the includePackage.xml file is also
+    being used then any types that have values in the include file will only use the include
+    logic and will not look at the ignore members for that type.
+-->
+  <types>
+	<members>Goal</members>
+	<members>SocialPersona</members>
+	<name>CustomObject</name>
+  </types>
+  <types>
+	<members>LiveChatTranscriptActive-Live Chat Transcript %28In Progress%29 Layout</members>
+	<members>LiveChatTranscriptWaiting-Live Chat Transcript %28Waiting%29 Layout</members>
+	<members>SocialPost-Social Post Layout</members>
+	<name>Layout</name>
+  </types>
+  <types>
+	<members>AccountBrand.All_Account_Brands</members>
+	<members>ChannelProgram.All_Channel_Programs</members>
+	<members>ChannelProgram.My_Channel_Programs</members>
+	<members>ChannelProgramLevel.All_Channel_Program_Levels</members>
+	<members>ChannelProgramLevel.My_Channel_Program_Levels</members>
+	<members>CollaborationGroup.All_ChatterGroups</members>
+	<members>Entitlement.All_Entitlements</members>
+	<members>Idea.Ideas_Last_7_Days</members>
+	<members>PartnerFundAllocation.All_Partner_Fund_Allocations</members>
+	<members>PartnerFundAllocation.My_Partner_Fund_Allocations</members>
+	<members>PartnerFundClaim.All_Partner_Fund_Claims</members>
+	<members>PartnerFundClaim.My_Partner_Fund_Claims</members>
+	<members>PartnerFundRequest.All_Partner_Fund_Requests</members>
+	<members>PartnerFundRequest.My_Partner_Fund_Requests</members>
+	<members>PartnerMarketingBudget.All_Partner_Marketing_Budgets</members>
+	<members>PartnerMarketingBudget.My_Partner_Marketing_Budgets</members>
+	<members>Scorecard.AllScorecards</members>
+	<members>Scorecard.MyScorecards</members>
+	<members>ServiceContract.All_ServiceContracts</members>
+	<members>SocialPersona.AllSocialPersonas</members>
+	<members>Task.CompletedTasks</members>
+	<members>Task.DelegatedTasks</members>
+	<members>Task.OpenTasks</members>
+	<members>Task.OverdueTasks</members>
+	<members>Task.RecurringTasks</members>
+	<members>Task.TodaysTasks</members>
+	<members>Task.UnscheduledTasks</members>
+	<members>WorkFeedbackRequest.AboutTopics</members>
+	<members>WorkFeedbackRequest.All</members>
+	<members>WorkFeedbackTemplate.All</members>
+	<name>ListView</name>
+  </types>
+  <types>
+	<members>Account.Standard_Account_Match_Rule_v1_0</members>
+	<members>Contact.Standard_Contact_Match_Rule_v1_1</members>
+	<members>Lead.Standard_Lead_Match_Rule_v1_0</members>
+	<name>MatchingRule</name>
+  </types>
+  <types>
+	<members>CollaborationGroup.NewGroupRecord</members>
+	<name>QuickAction</name>
+  </types>
+  <types>
+	<members>AccountContactMultiRoles</members>
+	<members>FiscalYearPeriodName</members>
+	<members>IdeaMultiCategory</members>
+	<members>IdeaStatus</members>
+	<members>IdeaThemeStatus</members>
+	<members>OpportunityCompetitor</members>
+	<members>OrderType</members>
+	<members>QuoteStatus</members>
+	<members>RoleInTerritory2</members>
+	<members>SalesTeamRole</members>
+	<members>SocialPostClassification</members>
+	<members>SocialPostEngagementLevel</members>
+	<members>SocialPostReviewedStatus</members>
+	<members>WorkOrderLineItemStatus</members>
+	<members>WorkOrderPriority</members>
+	<members>WorkOrderStatus</members>
+	<name>StandardValueSet</name>
+  </types>
+  <version>48.0</version>
+</Package>

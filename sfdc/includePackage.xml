@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+<!-- 
+    includePackage.xml
+    This file is used to list out the specific metadata components that should be retrieved for the
+	types listed in this file.  If you include a type and members in this file then only those specific
+	members will be retrieved for that type.  This allows you to limit what is included in the build without
+	having to deal with ignore statements.
+-->
+  <version>48.0</version>
+</Package>

@@ -212,9 +212,8 @@ public class PostRetrieveProcessor extends SalesforceTask {
 												}
 												// Remove Custom Fields that are not in the package.xml or standard
 												// fields that are explicitly ignored
-												String ignoreName = "CustomField." + fullName;
 												if ((!packageCustomFields.contains(fullName) && fullName.endsWith("__c")) ||
-														ignoreList.contains(ignoreName)) {
+														!includeMetadata("CustomField", fullName, null)) {
 													removeNodes.add(customFieldNode);
 												}
 											}
@@ -318,9 +317,8 @@ public class PostRetrieveProcessor extends SalesforceTask {
 												}
 												// Remove Custom Fields that are not in the package.xml or standard
 												// fields that are explicitly ignored
-												String ignoreName = "CustomField." + fullName;
 												if ((!packageCustomFields.contains(fullName) && fullName.endsWith("__c")) ||
-														ignoreList.contains(ignoreName)) {
+														!includeMetadata("CustomField", fullName, null)) {
 													removeNodes.add(customFieldNode);
 												}
 											}
@@ -435,9 +433,8 @@ public class PostRetrieveProcessor extends SalesforceTask {
 											}
 											// Remove Custom Fields that are not in the package.xml or standard
 											// fields that are explicitly ignored
-											String ignoreName = "CustomField." + fullName;
 											if ((!packageCustomFields.contains(fullName) && fullName.endsWith("__c")) ||
-													ignoreList.contains(ignoreName)) {
+													!includeMetadata("CustomField", fullName, null)) {
 												removeNodes.add(customFieldNode);
 											} else {
 												// Sort valueSettings nodes

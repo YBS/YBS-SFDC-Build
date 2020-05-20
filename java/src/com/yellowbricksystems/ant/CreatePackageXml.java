@@ -62,7 +62,16 @@ public class CreatePackageXml extends SalesforceTask {
 	protected String packageFileName;
 	
 	protected Map<String, List<String>> typesMap = new HashMap<String, List<String>>();
-	
+
+	public static final String EXCLUDED_PACKAGE_XML_FILENAME = "excludedPackage.xml";
+	protected Map<String, List<String>> excludedTypesMap = new HashMap<String, List<String>>();
+	public static final String[] EXCLUDED_PACKAGE_XML_COMMENTS = new String[] {
+		EXCLUDED_PACKAGE_XML_FILENAME,
+		"This file is used to list out the metadata components that would normally be retrieved because of",
+		"the salesforce.properties settings but are being excluded due to the " + INCLUDE_PACKAGE_XML_FILENAME,
+		"or " + IGNORE_PACKAGE_XML_FILENAME + " values.  This file is generated automatically."
+	};
+
 	// Object related collections
 	protected List<String> objectNames = new ArrayList<String>();
 	// Object API Name => TableEnumOrId
@@ -217,6 +226,9 @@ public class CreatePackageXml extends SalesforceTask {
 			}
 
 			PackageUtilities.createPackageXmlFile(packageFileName, API_VERSION, typesMap);
+			String basedir = getProject().getProperty("basedir");
+			PackageUtilities.createPackageXmlFile(basedir + "/" + EXCLUDED_PACKAGE_XML_FILENAME, API_VERSION, excludedTypesMap, EXCLUDED_PACKAGE_XML_COMMENTS);
+
 			if (getPropertyBoolean(SF_PRINT_UNUSED_TYPES)) {
 				printUnusedTypes();
 			}
@@ -247,17 +259,26 @@ public class CreatePackageXml extends SalesforceTask {
 		}
 	}
 
-	protected void addTypeMember(String typeName, String memberName, String namespace) {
-		if (!ignoreList.contains(typeName + "." + memberName)) {
-			if (namespace == null || namespace.trim().length() == 0 || !packageIgnoreList.contains(namespace)) {
-				List<String> memberList = typesMap.get(typeName);
-				if (memberList == null) {
-					memberList = new ArrayList<String>();
-					typesMap.put(typeName, memberList);
-				}
-				memberList.add(memberName);
+	protected boolean addTypeMember(String typeName, String memberName, String namespace) {
+		boolean added = false;
+		if (includeMetadata(typeName, memberName, namespace)) {
+			List<String> memberList = typesMap.get(typeName);
+			if (memberList == null) {
+				memberList = new ArrayList<String>();
+				typesMap.put(typeName, memberList);
 			}
+			memberList.add(memberName);
+			added = true;
+		} else {
+			// Keep track of which members we are excluding from the package.xml
+			List<String> excludedMemberList = excludedTypesMap.get(typeName);
+			if (excludedMemberList == null) {
+				excludedMemberList = new ArrayList<String>();
+				excludedTypesMap.put(typeName, excludedMemberList);
+			}
+			excludedMemberList.add(memberName);
 		}
+		return added;
 	}
 
 	protected void addTypeFromListMetadata(HashMap<String, PackageType> packageTypeMap) throws IOException {
@@ -303,18 +324,15 @@ public class CreatePackageXml extends SalesforceTask {
 					if (splitNames.length == 2) {
 						// This is a subset of Object so it include the Object name first and we just want the component name
 						String objectName = splitNames[0];
-						if (!objectNameEnumIdMap.containsKey(objectName) && !typeName.equals("CustomMetadata")) {
-							// We are not including this object so don't include this component
-							continue;
-						}
 						matchName = splitNames[1];
 					}
 					if (packageType.memberPrefix == null || packageType.memberPrefix.trim().length() == 0 ||
 							matchName.startsWith(packageType.memberPrefix)) {
-						addTypeMember(typeName, fullName, namespace);
-						int typeCount = typeCountMap.get(typeName);
-						++typeCount;
-						typeCountMap.put(typeName, typeCount);
+						if (addTypeMember(typeName, fullName, namespace)) {
+							int typeCount = typeCountMap.get(typeName);
+							++typeCount;
+							typeCountMap.put(typeName, typeCount);
+						}
 					}
 				}
 			}
@@ -365,8 +383,9 @@ public class CreatePackageXml extends SalesforceTask {
 							String matchName = fullName;
 							if (memberPrefix == null || memberPrefix.trim().length() == 0 ||
 									matchName.startsWith(memberPrefix)) {
-								addTypeMember(typeName, fullName, namespacePrefix);
-								++typeCount;
+								if (addTypeMember(typeName, fullName, namespacePrefix)) {
+									++typeCount;
+								}
 							}
 						}
 					}
@@ -502,8 +521,9 @@ public class CreatePackageXml extends SalesforceTask {
 								// Need to encode Layout name since it is not a DeveloperName
 								fullName = encodePackageMember(fullName);
 							}
-							addTypeMember(typeName, fullName, namespace);
-							++typeCount;
+							if (addTypeMember(typeName, fullName, namespace)) {
+								++typeCount;
+							}
 						}
 					}
 				}
@@ -566,6 +586,7 @@ public class CreatePackageXml extends SalesforceTask {
 	protected void addTypeFromToolingQuery(String typeName, String memberPrefix) throws IOException {
 		try {
 			long startTime = System.nanoTime();
+			int typeCount = 0;
 			String query = "select Id, Name, NamespacePrefix from " + typeName;
 			if (managedPackageTypes.contains(typeName)) {
 				query += " order by Name";
@@ -600,7 +621,9 @@ public class CreatePackageXml extends SalesforceTask {
 						String matchName = fullName;
 						if (memberPrefix == null || memberPrefix.trim().length() == 0 ||
 								matchName.startsWith(memberPrefix)) {
-							addTypeMember(typeName, fullName, namespacePrefix);
+							if (addTypeMember(typeName, fullName, namespacePrefix)) {
+								++typeCount;
+							}
 						}
 					}
 				}
@@ -611,7 +634,7 @@ public class CreatePackageXml extends SalesforceTask {
 				}
 			}
 			long elapsedTime = System.nanoTime() - startTime;
-			log("Added " + typeName + " from Tooling query [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
+			log("Added " + typeName + " (" + typeCount + ") from Tooling query [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			throw new BuildException("Exception trying to add " + typeName + " components.");
@@ -643,8 +666,9 @@ public class CreatePackageXml extends SalesforceTask {
 					if (folderNamespacePrefix != null && folderNamespacePrefix.trim().length() > 0) {
 						folderName = folderNamespacePrefix + "__" + folderName;
 					}
-					addTypeMember(objectName, folderName, folderNamespacePrefix);
-					++typeCount;
+					if (addTypeMember(objectName, folderName, folderNamespacePrefix)) {
+						++typeCount;
+					}
 
 					String soql = "select Id, DeveloperName, NamespacePrefix from " + objectName + " where " +
 							objectFolderFieldName + "='" + folderId + "' ";
@@ -656,8 +680,9 @@ public class CreatePackageXml extends SalesforceTask {
 						if (namespacePrefix != null && namespacePrefix.trim().length() > 0) {
 							developerName = namespacePrefix + "__" + developerName;
 						}
-						addTypeMember(objectName, folderName + "/" + developerName, namespacePrefix);
-						++typeCount;
+						if (addTypeMember(objectName, folderName + "/" + developerName, namespacePrefix)) {
+							++typeCount;
+						}
 					}
 				}
 
@@ -670,8 +695,9 @@ public class CreatePackageXml extends SalesforceTask {
 					SObject[] sobjects = qr.getRecords();
 					for (SObject so : sobjects) {
 						String developerName = (String) so.getField("DeveloperName");
-						addTypeMember(objectName, "unfiled$public/" + developerName, null);
-						++typeCount;
+						if (addTypeMember(objectName, "unfiled$public/" + developerName, null)) {
+							++typeCount;
+						}
 					}
 				}
 				long elapsedTime = System.nanoTime() - startTime;

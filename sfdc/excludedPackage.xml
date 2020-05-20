@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+<!-- 
+    excludedPackage.xml
+    This file is used to list out the metadata components that would normally be retrieved because of
+    the salesforce.properties settings but are being excluded due to the includePackage.xml
+    or ignorePackage.xml values.  This file is generated automatically.
+-->
+  <version>48.0</version>
+</Package>

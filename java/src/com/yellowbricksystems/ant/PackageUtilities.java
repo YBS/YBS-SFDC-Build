@@ -50,11 +50,24 @@ import org.w3c.dom.NodeList;
 public class PackageUtilities {
 
 	public static void createPackageXmlFile(String packageFileName, double asOfVersion,
-			Map<String, List<String>> typesMap) throws IOException {
+											Map<String, List<String>> typesMap) throws IOException {
+		createPackageXmlFile(packageFileName, asOfVersion, typesMap, null);
+	}
+
+	public static void createPackageXmlFile(String packageFileName, double asOfVersion,
+			Map<String, List<String>> typesMap, String[] comments) throws IOException {
 
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(packageFileName),"UTF-8"));		
 		writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 		writer.write("<Package xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n");
+
+		if (comments != null && comments.length > 0) {
+			writer.write("<!-- \n");
+			for (String comment : comments) {
+				writer.write("    " + comment + "\n");
+			}
+			writer.write("-->\n");
+		}
 
 		List<String> typeList = new ArrayList<String>(typesMap.keySet());
 		Collections.sort(typeList);
@@ -81,31 +94,33 @@ public class PackageUtilities {
 
 		try {
 			File xmlFile = new File(packageFileName);
-			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-			Document doc = dBuilder.parse(xmlFile);
-			doc.getDocumentElement().normalize();
+			if (xmlFile.exists()) {
+				DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+				DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+				Document doc = dBuilder.parse(xmlFile);
+				doc.getDocumentElement().normalize();
 
-			NodeList nodeList = doc.getElementsByTagName("types");
-			for (int i=0; i < nodeList.getLength(); i++) {
+				NodeList nodeList = doc.getElementsByTagName("types");
+				for (int i=0; i < nodeList.getLength(); i++) {
 
-				Node typesNode = nodeList.item(i);
-				if (typesNode.getNodeType() == Node.ELEMENT_NODE) {
-					Element typesElement = (Element) typesNode;
+					Node typesNode = nodeList.item(i);
+					if (typesNode.getNodeType() == Node.ELEMENT_NODE) {
+						Element typesElement = (Element) typesNode;
 
-					NodeList nameNodes = typesElement.getElementsByTagName("name");
-					if (nameNodes != null && nameNodes.getLength() == 1) {
-						Node nameNode = nameNodes.item(0);
-						String typeName = nameNode.getChildNodes().item(0).getNodeValue();
-						List<String> typeMembers = new ArrayList<String>();
-						typesMap.put(typeName, typeMembers);
+						NodeList nameNodes = typesElement.getElementsByTagName("name");
+						if (nameNodes != null && nameNodes.getLength() == 1) {
+							Node nameNode = nameNodes.item(0);
+							String typeName = nameNode.getChildNodes().item(0).getNodeValue();
+							List<String> typeMembers = new ArrayList<String>();
+							typesMap.put(typeName, typeMembers);
 
-						NodeList memberNodes = typesElement.getElementsByTagName("members");
-						if (memberNodes != null && memberNodes.getLength() > 0) {
-							for (int j=0; j < memberNodes.getLength(); ++j) {
-								Node memberNode = memberNodes.item(j);
-								String memberName = memberNode.getChildNodes().item(0).getNodeValue();
-								typeMembers.add(memberName);
+							NodeList memberNodes = typesElement.getElementsByTagName("members");
+							if (memberNodes != null && memberNodes.getLength() > 0) {
+								for (int j=0; j < memberNodes.getLength(); ++j) {
+									Node memberNode = memberNodes.item(j);
+									String memberName = memberNode.getChildNodes().item(0).getNodeValue();
+									typeMembers.add(memberName);
+								}
 							}
 						}
 					}

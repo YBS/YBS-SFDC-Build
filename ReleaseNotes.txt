@@ -8,6 +8,19 @@ v48.0:
 	  version.  The new format should just be the domain name which should be one of the following two values:
 		https://test.salesforce.com
 		https://login.salesforce.com
+	- The sf.ignore* and sf.package.ignore* statements in salesforce.properties are being replaced with a new
+	  ignorePackage.xml file.  The first time you do a retrieve with this build it will create the ignorePackage.xml
+	  file based on the current settings in salesforce.properties.  You can then commit the ignorePackage.xml and remove
+	  the ignore statements from the salesforce.properties file.
+	- You are now able to specifically list out the metadata members you want to include for a specific type by using
+	  creating an includePackage.xml file.  Any types listed in that file that have members will only include those
+	  members in the retrieve and all other members in the org will be ignored without requiring an ignore statement.
+	- The CustomObject include/ignore logic has been updated to remove all related object components from the package.xml
+	  file if a CustomObject is either not included or ignored.  You should now just need to include/ignore the CustomObject and
+	  all other related members will be removed.
+	- A new excludedPackage.xml file will be generated with each package.xml to show those metadata members which would normally
+	  have been in the package.xml but are being excluded due to the include/ignore logic.  This is used so that you can see new
+	  members that have been added which you may want to include.
 	- The CreatePackageXml process has been refactored to try to simplify the maintenance of the code.  The
 	  List Metadata calls have been updated to batch them in groups of 3.  The Create Package XML output has been
 	  updated to include the # of components added for each type.
