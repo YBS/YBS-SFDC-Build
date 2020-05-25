@@ -247,9 +247,9 @@ public class SalesforceTask extends Task {
 	public static final PackageType SF_INCLUDE_TERRITORY2_SETTINGS = new PackageType("sf.includeTerritory2Settings", "Territory2", ADD_METHOD_SETTINGS);
 	
 	// Sites
-	public static final PackageType SF_INCLUDE_COMMUNITIES = new PackageType("sf.includeCommunities", "Community");
 	public static final PackageType SF_INCLUDE_SITES = new PackageType("sf.includeSites", "CustomSite");
 	public static final PackageType SF_INCLUDE_NETWORKS = new PackageType("sf.includeNetworks", "Network");
+	public static final PackageType SF_INCLUDE_EXPERIENCE_BUNDLES = new PackageType("sf.includeExperienceBundles", "ExperienceBundle");
 	public static final PackageType SF_INCLUDE_PORTALS = new PackageType("sf.includePortals", "Portal");
 	public static final PackageType SF_INCLUDE_SHARING_SETS = new PackageType("sf.includeSharingSets", "SharingSet");
 	public static final PackageType SF_INCLUDE_SITE_DOT_COMS = new PackageType("sf.includeSiteDotComs", "SiteDotCom");
@@ -264,7 +264,8 @@ public class SalesforceTask extends Task {
 	public static final PackageType SF_INCLUDE_NETWORK_BRANDINGS = new PackageType("sf.includeNetworkBrandings", "NetworkBranding");
 	public static final PackageType SF_INCLUDE_AUDIENCES = new PackageType("sf.includeAudiences", "Audience");
 	public static final PackageType SF_INCLUDE_LIGHTNING_EXPERIENCE_THEMES = new PackageType("sf.includeLightningExperienceThemes", "LightningExperienceTheme");
-	
+	public static final PackageType SF_INCLUDE_COMMUNITIES = new PackageType("sf.includeCommunities", "Community");
+
 	// Workflows
 	public static final PackageType SF_INCLUDE_APPROVAL_PROCESSES =  new PackageType("sf.includeApprovalProcesses", "ApprovalProcess");
 	public static final PackageType SF_INCLUDE_ASSIGNMENT_RULES =  new PackageType("sf.includeAssignmentRules", "AssignmentRule");

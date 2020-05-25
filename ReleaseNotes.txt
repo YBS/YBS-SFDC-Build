@@ -27,6 +27,8 @@ v48.0:
 	- The following Metadata Types/Properties were removed because they are no longer supported:
         - EventDelivery / sf.includeEventDeliveries
         - EventSubscription / sf.includeEventSubscriptions
+    - Added following Metadata Types/Properties:
+        - ExperienceBundle / sf.includeExperienceBundles
 
 v45.2a:
 	- Fix PostRetrieveProcessor to add cleanDocument statements to prevent extra blank lines with Java 11
