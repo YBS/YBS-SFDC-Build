@@ -267,7 +267,9 @@ public class CreatePackageXml extends SalesforceTask {
 				memberList = new ArrayList<String>();
 				typesMap.put(typeName, memberList);
 			}
-			memberList.add(memberName);
+			if (!memberList.contains(memberName)) {
+				memberList.add(memberName);
+			}
 			added = true;
 		} else {
 			// Keep track of which members we are excluding from the package.xml

@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -57,7 +58,7 @@ public class PackageUtilities {
 	public static void createPackageXmlFile(String packageFileName, double asOfVersion,
 			Map<String, List<String>> typesMap, String[] comments) throws IOException {
 
-		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(packageFileName),"UTF-8"));		
+		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(packageFileName), StandardCharsets.UTF_8));
 		writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 		writer.write("<Package xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n");
 
