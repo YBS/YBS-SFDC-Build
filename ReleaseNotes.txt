@@ -24,6 +24,13 @@ v48.0:
 	- The CreatePackageXml process has been refactored to try to simplify the maintenance of the code.  The
 	  List Metadata calls have been updated to batch them in groups of 3.  The Create Package XML output has been
 	  updated to include the # of components added for each type.
+	- The DataLoader functions have been moved from the build.xml file to a new data/build.xml file and the DataLoader.jar
+	  file has been moved from lib to data/lib to prevent conflicts.  You should make the following updates to your local build
+	  directory:
+			- Update build.xml
+			- Copy new data/build.xml
+			- Remove lib/DataLoader.jar
+			- Copy data/lib/DataLoader.jar
 	- The following Metadata Types/Properties were removed because they are no longer supported:
         - EventDelivery / sf.includeEventDeliveries
         - EventSubscription / sf.includeEventSubscriptions
