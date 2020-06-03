@@ -75,6 +75,7 @@ package com.yellowbricksystems.ant;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -132,10 +133,10 @@ public class PostRetrieveProcessor extends SalesforceTask {
 			String packageXmlFileName = retrieveTarget + "/package.xml";
 			packageTypeMap = PackageUtilities.parsePackageXmlFile(packageXmlFileName);
 				
-			filterObjects();
 			filterSites();
 			filterPermissionSets();
 			filterProfiles();
+			filterObjects();
 			sortApplicationOverrides();
 			sortLayouts();
 			sortWorkflowTimeTriggers();
@@ -149,7 +150,7 @@ public class PostRetrieveProcessor extends SalesforceTask {
 	protected void filterPermissionSets() throws Exception {
 		
 		if (getPropertyBoolean(SF_INCLUDE_PERMISSION_SETS)) {
-			log("Filtering Permission Sets");
+			long startTime = System.nanoTime();
 			List<String> packageCustomFields = packageTypeMap.get("CustomField");
 			String permissionSetsDirectoryName = retrieveTarget + "/permissionsets";
 			File permissionSetsDirectory = new File(permissionSetsDirectoryName);
@@ -232,12 +233,14 @@ public class PostRetrieveProcessor extends SalesforceTask {
 					ProcessorUtilities.saveDocument(doc, fullFileName);
 				}
 			}
+			long elapsedTime = System.nanoTime() - startTime;
+			log("Filtered Permission Sets [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
 		}
 	}
 
 	protected void filterProfiles() throws Exception {
 		if (getPropertyBoolean(SF_INCLUDE_PROFILES)) {
-			log("Filtering Profiles");
+			long startTime = System.nanoTime();
 			String profilesDirectoryName = retrieveTarget + "/profiles";
 			File profilesDirectory = new File(profilesDirectoryName);
 			String[] files = profilesDirectory.list();
@@ -338,6 +341,8 @@ public class PostRetrieveProcessor extends SalesforceTask {
 					ProcessorUtilities.saveDocument(doc, fullFileName);
 				}
 			}
+			long elapsedTime = System.nanoTime() - startTime;
+			log("Filtered Profiles [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
 		}
 	}
 	
@@ -346,7 +351,7 @@ public class PostRetrieveProcessor extends SalesforceTask {
 		File objectsDirectory = new File(objectsDirectoryName);
 		String[] files = objectsDirectory.list();
 		if (files != null) {
-			log("Filtering Objects");
+			long startTime = System.nanoTime();
 			List<String> packageBusinessProcesses = packageTypeMap.get("BusinessProcess");
 			List<String> packageCustomFields = packageTypeMap.get("CustomField");
 			List<String> packageFieldSets = packageTypeMap.get("FieldSet");
@@ -530,6 +535,7 @@ public class PostRetrieveProcessor extends SalesforceTask {
 											String fullName = objectName + "." + fullNameNode.getTextContent();
 											if (!packageRecordTypes.contains(fullName)) {
 												removeNodes.add(recordTypeNode);
+												continue; // No need to loop through picklist values
 											}
 										}
 										
@@ -659,6 +665,8 @@ public class PostRetrieveProcessor extends SalesforceTask {
 				// Always save so that we don't get "phantom" changes
 				ProcessorUtilities.saveDocument(doc, fullFileName);
 			}
+			long elapsedTime = System.nanoTime() - startTime;
+			log("Filtered Objects [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
 		}
 	}
 
@@ -668,7 +676,7 @@ public class PostRetrieveProcessor extends SalesforceTask {
 	 */
 	protected void filterSites() throws Exception {
 		if (getPropertyBoolean(SF_INCLUDE_SITES)) {
-			log("Filtering Sites");
+			long startTime = System.nanoTime();
 			String sitesDirectoryName = retrieveTarget + "/sites";
 			File objectsDirectory = new File(sitesDirectoryName);
 			String[] files = objectsDirectory.list();
@@ -713,13 +721,15 @@ public class PostRetrieveProcessor extends SalesforceTask {
 					ProcessorUtilities.saveDocument(doc, fullFileName);
 				}
 			}
+			long elapsedTime = System.nanoTime() - startTime;
+			log("Filtered Sites [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
 		}
 	}
 
 
     protected void sortApplicationOverrides() throws Exception {
         if (getPropertyBoolean(SF_INCLUDE_APPLICATIONS)) {
-			log("Sorting Application Overrides");
+			long startTime = System.nanoTime();
             String applicationsDirectoryName = retrieveTarget + "/applications";
             File applicationsDirectory = new File(applicationsDirectoryName);
             String[] files = applicationsDirectory.list();
@@ -745,12 +755,14 @@ public class PostRetrieveProcessor extends SalesforceTask {
                     ProcessorUtilities.saveDocument(doc, fullFileName);
                 }
             }
+			long elapsedTime = System.nanoTime() - startTime;
+			log("Sorted Application Overrides [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
         }
     }
 
 	protected void sortLayouts() throws Exception {
 		if (getPropertyBoolean(SF_INCLUDE_LAYOUTS)) {
-			log("Sorting Layouts");
+			long startTime = System.nanoTime();
 			String layoutsDirectoryName = retrieveTarget + "/layouts";
 			File layoutsDirectory = new File(layoutsDirectoryName);
 			String[] files = layoutsDirectory.list();
@@ -785,12 +797,14 @@ public class PostRetrieveProcessor extends SalesforceTask {
 					ProcessorUtilities.saveDocument(doc, fullFileName);
 				}
 			}
+			long elapsedTime = System.nanoTime() - startTime;
+			log("Sorted Layouts [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
 		}
 	}
 
 	protected void sortWorkflowTimeTriggers() throws Exception {
         if (getPropertyBoolean(SF_INCLUDE_WORKFLOW_RULES)) {
-			log("Sorting Workflows");
+			long startTime = System.nanoTime();
             String workflowDirectoryName = retrieveTarget + "/workflows";
             File workflowDirectory = new File(workflowDirectoryName);
             String[] files = workflowDirectory.list();
@@ -824,6 +838,8 @@ public class PostRetrieveProcessor extends SalesforceTask {
                     // Always save so that we don't get "phantom" changes
                     ProcessorUtilities.saveDocument(doc, fullFileName);
                 }
+				long elapsedTime = System.nanoTime() - startTime;
+				log("Sorted Workflows [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
             }
         }
     }
