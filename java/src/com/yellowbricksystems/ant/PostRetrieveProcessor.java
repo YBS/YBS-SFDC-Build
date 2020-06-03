@@ -149,6 +149,7 @@ public class PostRetrieveProcessor extends SalesforceTask {
 	protected void filterPermissionSets() throws Exception {
 		
 		if (getPropertyBoolean(SF_INCLUDE_PERMISSION_SETS)) {
+			log("Filtering Permission Sets");
 			List<String> packageCustomFields = packageTypeMap.get("CustomField");
 			String permissionSetsDirectoryName = retrieveTarget + "/permissionsets";
 			File permissionSetsDirectory = new File(permissionSetsDirectoryName);
@@ -236,6 +237,7 @@ public class PostRetrieveProcessor extends SalesforceTask {
 
 	protected void filterProfiles() throws Exception {
 		if (getPropertyBoolean(SF_INCLUDE_PROFILES)) {
+			log("Filtering Profiles");
 			String profilesDirectoryName = retrieveTarget + "/profiles";
 			File profilesDirectory = new File(profilesDirectoryName);
 			String[] files = profilesDirectory.list();
@@ -344,6 +346,7 @@ public class PostRetrieveProcessor extends SalesforceTask {
 		File objectsDirectory = new File(objectsDirectoryName);
 		String[] files = objectsDirectory.list();
 		if (files != null) {
+			log("Filtering Objects");
 			List<String> packageBusinessProcesses = packageTypeMap.get("BusinessProcess");
 			List<String> packageCustomFields = packageTypeMap.get("CustomField");
 			List<String> packageFieldSets = packageTypeMap.get("FieldSet");
@@ -665,6 +668,7 @@ public class PostRetrieveProcessor extends SalesforceTask {
 	 */
 	protected void filterSites() throws Exception {
 		if (getPropertyBoolean(SF_INCLUDE_SITES)) {
+			log("Filtering Sites");
 			String sitesDirectoryName = retrieveTarget + "/sites";
 			File objectsDirectory = new File(sitesDirectoryName);
 			String[] files = objectsDirectory.list();
@@ -715,6 +719,7 @@ public class PostRetrieveProcessor extends SalesforceTask {
 
     protected void sortApplicationOverrides() throws Exception {
         if (getPropertyBoolean(SF_INCLUDE_APPLICATIONS)) {
+			log("Sorting Application Overrides");
             String applicationsDirectoryName = retrieveTarget + "/applications";
             File applicationsDirectory = new File(applicationsDirectoryName);
             String[] files = applicationsDirectory.list();
@@ -745,6 +750,7 @@ public class PostRetrieveProcessor extends SalesforceTask {
 
 	protected void sortLayouts() throws Exception {
 		if (getPropertyBoolean(SF_INCLUDE_LAYOUTS)) {
+			log("Sorting Layouts");
 			String layoutsDirectoryName = retrieveTarget + "/layouts";
 			File layoutsDirectory = new File(layoutsDirectoryName);
 			String[] files = layoutsDirectory.list();
@@ -784,6 +790,7 @@ public class PostRetrieveProcessor extends SalesforceTask {
 
 	protected void sortWorkflowTimeTriggers() throws Exception {
         if (getPropertyBoolean(SF_INCLUDE_WORKFLOW_RULES)) {
+			log("Sorting Workflows");
             String workflowDirectoryName = retrieveTarget + "/workflows";
             File workflowDirectory = new File(workflowDirectoryName);
             String[] files = workflowDirectory.list();

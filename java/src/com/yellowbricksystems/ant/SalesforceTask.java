@@ -121,7 +121,6 @@ public class SalesforceTask extends Task {
 			"sf.includeDocumentsFolderPrefix", "sf.includeDocumentsFolders", null, "Document", "FolderId");
 	public static final PackageType SF_INCLUDE_HOME_PAGE_COMPONENTS = new PackageType("sf.includeHomePageComponents", "HomePageComponent");
 	public static final PackageType SF_INCLUDE_HOME_PAGE_LAYOUTS = new PackageType("sf.includeHomePageLayouts", "HomePageLayout");
-	public static final PackageType SF_INCLUDE_INSTALLED_PACKAGES = new PackageType("sf.includeInstalledPackages", "InstalledPackage", ADD_METHOD_PACKAGE);
 	public static final PackageType SF_INCLUDE_TRANSLATIONS = new PackageType("sf.includeTranslations", "Translations");
 	public static final PackageType SF_INCLUDE_CHATTER_EXTENSIONS = new PackageType("sf.includeChatterExtensions", "ChatterExtension");
 	public static final PackageType SF_INCLUDE_LIGHTNING_BOLTS = new PackageType("sf.includeLightningBolts", "LightningBolt");
@@ -287,6 +286,28 @@ public class SalesforceTask extends Task {
 	public static final PackageType SF_INCLUDE_BOTS = new PackageType("sf.includeBots", "Bot");
 	public static final PackageType SF_INCLUDE_BOT_VERSIONS = new PackageType("sf.includeBotVersions", "BotVersion");
 	public static final PackageType SF_INCLUDE_MI_DOMAINS = new PackageType("sf.includeMIDomains", "MIDomain");
+
+	// InstalledPackage values are not added into package.xml because you cannot install a Managed Package through Metadata
+	// However, they are used to control which installed packages should be included/ignored/excluded
+	public static final PackageType SF_INCLUDE_INSTALLED_PACKAGES = new PackageType("sf.includeInstalledPackages", "InstalledPackage", ADD_METHOD_PACKAGE);
+
+	// Those Metadata Type names that use a hyphen to separate the object name from the member name
+	public static final List OBJECT_HYPHEN_TYPES = new ArrayList();
+	// Those Metadata Type names that are related to an object but consist of just the object name instead
+	// of object name + dot/hyphen + member name
+	public static final List OBJECT_RELATED_TYPES = new ArrayList();
+
+	static {
+		// Initialize static lists
+		OBJECT_HYPHEN_TYPES.add(SF_INCLUDE_LAYOUTS.metadataName);
+		OBJECT_HYPHEN_TYPES.add(SF_INCLUDE_OBJECT_TRANSLATIONS.metadataName);
+
+		OBJECT_RELATED_TYPES.add(SF_INCLUDE_ASSIGNMENT_RULES.metadataName);
+		OBJECT_RELATED_TYPES.add(SF_INCLUDE_AUTO_RESPONSE_RULES.metadataName);
+		OBJECT_RELATED_TYPES.add(SF_INCLUDE_SHARING_RULES.metadataName);
+		OBJECT_RELATED_TYPES.add(SF_INCLUDE_TOPICS_FOR_OBJECTS.metadataName);
+		OBJECT_RELATED_TYPES.add(SF_INCLUDE_TABS.metadataName);
+	}
 
 	protected PartnerConnection getPartnerConnection() {
 		if (partnerConnection == null) {
@@ -476,20 +497,57 @@ public class SalesforceTask extends Task {
 
 		// Check to see if this is an "Object" type (i.e. has an Object name as the prefix) and determine
 		// whether the associated Object is being included
-		if (memberName.contains(".") || memberName.contains("-")) {
-			String objectName = null;
-			if (memberName.contains(".")) {
-				objectName = memberName.split("\\.", 2)[0];
-			} else {
-				objectName = memberName.split("-", 2)[0];
-			}
-			if (!getIncludeIgnore("CustomObject", objectName)) {
-				// The related object is either not included or is ignored
-				return false;
-			}
+		String objectName = getObjectName(typeName, memberName);
+		if (objectName != null && !getIncludeIgnore("CustomObject", objectName)) {
+			// The related object is either not included or is ignored
+			return false;
 		}
 
 		return true;
+	}
+
+	// Parse out the Object Name from the typeName/memberName if
+	// the type is object related
+	protected String getObjectName(String typeName, String memberName) {
+		String objectName = null;
+		if (OBJECT_HYPHEN_TYPES.contains(typeName)) {
+			// This is a Hyphen type
+			objectName = memberName.split("-", 2)[0];
+		} else if (OBJECT_RELATED_TYPES.contains(typeName)) {
+			// This type just uses the object name as the memberName
+			if (typeName == SF_INCLUDE_TABS.metadataName) {
+				// Only use the Tab Name as the objectName if it ends with __c
+				if (memberName.endsWith("__c")) {
+					objectName = memberName;
+				}
+			} else {
+				objectName = memberName;
+			}
+		} else if (memberName.contains(".")) {
+			// This is a dot notation type
+			objectName = memberName.split("\\.", 2)[0];
+		}
+		return objectName;
+	}
+
+	protected String getObjectNamespace(String objectName) {
+		String namespace = null;
+		if (objectName != null) {
+			// Strip out object suffix values to prevent accidental match
+			String cleanObjectName = objectName.replaceFirst("__c$", "")
+					.replaceFirst("__kav$", "")
+					.replaceFirst("__x$", "")
+					.replaceFirst("__b$", "")
+					.replaceFirst("__xo$", "")
+					.replaceFirst("__e$", "")
+					.replaceFirst("__p$", "")
+					.replaceFirst("__mdt$", "");
+			String[] parts = cleanObjectName.split("__");
+			if (parts != null && parts.length == 2) {
+				namespace = parts[0];
+			}
+		}
+		return namespace;
 	}
 
 	private boolean getIncludeIgnore(String typeName, String memberName) {

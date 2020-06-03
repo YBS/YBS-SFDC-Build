@@ -67,9 +67,14 @@ public class CreatePackageXml extends SalesforceTask {
 	protected Map<String, List<String>> excludedTypesMap = new HashMap<String, List<String>>();
 	public static final String[] EXCLUDED_PACKAGE_XML_COMMENTS = new String[] {
 		EXCLUDED_PACKAGE_XML_FILENAME,
-		"This file is used to list out the metadata components that would normally be retrieved because of",
+		"This file is used to list out the unmanaged metadata components that would normally be retrieved because of",
 		"the salesforce.properties settings but are being excluded due to the " + INCLUDE_PACKAGE_XML_FILENAME,
-		"or " + IGNORE_PACKAGE_XML_FILENAME + " values.  This file is generated automatically."
+		"or " + IGNORE_PACKAGE_XML_FILENAME + " values.  This file is generated automatically.",
+		"",
+		"We are not including managed package components (or unmanaged components that are associated to managed",
+		"objects) in this file due to issues where some managed packages are not licensed in Production but do",
+		"come back in a Sandbox.  This will also simplify this file and prevent excessive changes when managed",
+		"package updates are pushed to an environment."
 	};
 
 	// Object related collections
@@ -272,13 +277,21 @@ public class CreatePackageXml extends SalesforceTask {
 			}
 			added = true;
 		} else {
-			// Keep track of which members we are excluding from the package.xml
-			List<String> excludedMemberList = excludedTypesMap.get(typeName);
-			if (excludedMemberList == null) {
-				excludedMemberList = new ArrayList<String>();
-				excludedTypesMap.put(typeName, excludedMemberList);
+			String objectName = getObjectName(typeName, memberName);
+			String objectNamespace = getObjectNamespace(objectName);
+			if (!((namespace != null && namespace.trim().length() > 0) ||
+					(objectNamespace != null && objectNamespace.trim().length() >0))){
+				// Keep track of which unmanaged members we are excluding from the package.xml
+				// We are preventing managed members & unmanaged members that are associated to
+				// managed objects from being added to the excludedPackage.xml file to prevent
+				// access issues between Production & Sandbox
+				List<String> excludedMemberList = excludedTypesMap.get(typeName);
+				if (excludedMemberList == null) {
+					excludedMemberList = new ArrayList<String>();
+					excludedTypesMap.put(typeName, excludedMemberList);
+				}
+				excludedMemberList.add(memberName);
 			}
-			excludedMemberList.add(memberName);
 		}
 		return added;
 	}
@@ -570,10 +583,6 @@ public class CreatePackageXml extends SalesforceTask {
 		return null;
 	}
 	
-	protected void addToolingType(String propertyName, String typeName) throws IOException{
-		addToolingType(propertyName, typeName, null);
-	}
-
 	protected void addToolingType(String propertyName, String typeName, String memberPrefixPropertyName) throws IOException{
 		String memberPrefix = null;
 		if (memberPrefixPropertyName != null) {
@@ -584,7 +593,7 @@ public class CreatePackageXml extends SalesforceTask {
 			addTypeFromToolingQuery(typeName, memberPrefix);
 		}
 	}
-	
+
 	protected void addTypeFromToolingQuery(String typeName, String memberPrefix) throws IOException {
 		try {
 			long startTime = System.nanoTime();
