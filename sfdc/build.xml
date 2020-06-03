@@ -36,8 +36,8 @@ SOFTWARE.
 	
 	<description>This is the default Yellow Brick Systems Salesforce build script.</description>
 	
-	<!--  Import the project data related targets from the data/projectbuild.xml script -->
-	<import file="data/projectbuild.xml" as="project" optional="true"/>
+	<!--  The references to the data import/export macros and data/projectbuild.xml file have -->
+	<!--  been removed from this build file and moved to build.xml in the data directory. -->
 	
 	<!--  Property files that control build behavior  -->
 	<property file="${basedir}/salesforce.properties"/>
@@ -64,15 +64,6 @@ SOFTWARE.
 			<format property="build.timestamp" pattern="yyyy-MM-dd-HH-mm-ss-SSS"/>
 			<format property="deploy.timestamp" pattern="M/d/yyyy h:mm a"/>
 		</tstamp>
-		
-		<echo>Encrypting the password for DataLoader....</echo>
-		<property file="login.properties"/>
-		<java outputproperty="encryptedpassword" classname="com.salesforce.dataloader.security.EncryptionUtil" classpath="lib/DataLoader.jar" failonerror="true">
-			<sysproperty key="log4j.configuration" value="file:data/config/log4j.xml"/>
-			<arg value="-e"/>
-			<arg value="${sf.password}"/>
-			<arg value="data/config/key.txt"/>
-		</java>
 	</target>
 
 	<target name="clean">
@@ -468,93 +459,6 @@ SOFTWARE.
 		style="${xsl.dir}/ObjectTranslations.xsl"
 		filenameparameter="filename"/>
 	</target>
-	
-	<!--
-		[exportdata]
-			This macro is used by projectbuild.xml targets to create tasks to export
-			data from Salesforce.
-	-->
-	<macrodef name="exportdata">
-		<attribute name="file"/>
-		<attribute name="object"/>
-		<element name="soql"/>
-		<sequential>
-			<string id="soqlstring"><soql/></string>
-			<echo message="Exporting @{object}"/>
-			<mkdir dir="data/exports"/>
-		
-			<copy file="data/config/template-process-conf.xml" tofile="data/config/process-conf.xml" overwrite="true" failonerror="true"/>
-			<replace file="data/config/process-conf.xml">
-				<replacefilter token="_endpoint_" value="${sf.serverurl}"/>
-				<replacefilter token="_username_" value="${sf.username}"/>
-				<replacefilter token="_password_" value="${encryptedpassword}"/>
-				<replacefilter token="_object_" value="@{object}"/>
-				<replacefilter token="_soql_" value="${toString:soqlstring}"/>
-				<replacefilter token="_file_" value="data/exports/@{file}.csv"/>
-				<replacefilter token="_keyfile_" value="data/config/key.txt"/>
-			</replace>
-			<!-- New versions of Data Loader put text before the encrypted password and we need to remove it -->
-			<replace file="data/config/process-conf.xml">
-				<replacetoken><![CDATA[The output string of encryption is: 
-]]></replacetoken>
-				<replaceValue></replaceValue>
-			</replace>
-		
-			<java classname="com.salesforce.dataloader.process.ProcessRunner" classpath="lib/DataLoader.jar" failonerror="true" fork="true">
-				<sysproperty key="salesforce.config.dir" value="data/config"/>
-				<arg line="process.name=export@{object}"/>
-			</java>
-		</sequential>
-	</macrodef>
-	
-	<!--
-		[importdata]
-			This macro is used by projectbuild.xml targets to create tasks to import
-			data to Salesforce.
-	-->
-	<macrodef name="importdata">
-		<attribute name="file"/>
-		<attribute name="object"/>
-		<attribute name="mappingfile"/>
-		<attribute name="externalid"/>
-		<sequential>
-		<echo message="Importing @{object} using ${sf.username}"/>
-        <input
-            message="Are you sure you want to continue (y/n)?"
-            validargs="y,n"
-            addproperty="do.import"
-        />
-        <condition property="do.abort">
-            <equals arg1="n" arg2="${do.import}"/>
-        </condition>
-        <fail if="do.abort">Build aborted by user.</fail>
-		<delete dir="tmp/exports"/>
-		<mkdir dir="tmp/exports"/>
-		<copy file="data/config/template-process-conf.xml" tofile="data/config/process-conf.xml" overwrite="true" failonerror="true"/>
-		<replace file="data/config/process-conf.xml">
-			<replacefilter token="_endpoint_" value="${sf.serverurl}"/>
-			<replacefilter token="_username_" value="${sf.username}"/>
-			<replacefilter token="_password_" value="${encryptedpassword}"/>
-			<replacefilter token="_object_" value="@{object}"/>
-			<replacefilter token="_soql_" value="@{soql}"/>
-			<replacefilter token="_file_" value="data/exports/@{file}.csv"/>
-			<replacefilter token="_keyfile_" value="data/config/key.txt"/>
-			<replacefilter token="_mappingfile_" value="data/mappings/@{mappingfile}.sdl"/>
-			<replacefilter token="_externalid_" value="@{externalid}"/>
-		</replace>
-		<!-- New versions of Data Loader put text before the encrypted password and we need to remove it -->
-		<replace file="data/config/process-conf.xml">
-			<replacetoken><![CDATA[The output string of encryption is: 
-]]></replacetoken>
-			<replaceValue></replaceValue>
-		</replace>
-			
-		<java classname="com.salesforce.dataloader.process.ProcessRunner" classpath="lib/DataLoader.jar" failonerror="true" fork="true">
-			<sysproperty key="salesforce.config.dir" value="data/config"/>
-			<arg line="process.name=import@{object}"/>
-		</java>
-		</sequential> 
-	</macrodef>
 
 	<!-- Default target  -->
 	<target name="usage">
