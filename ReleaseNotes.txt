@@ -18,9 +18,9 @@ v48.0:
 	- The CustomObject include/ignore logic has been updated to remove all related object components from the package.xml
 	  file if a CustomObject is either not included or ignored.  You should now just need to include/ignore the CustomObject and
 	  all other related members will be removed.
-	- A new excludedPackage.xml file will be generated with each package.xml to show those metadata members which would normally
-	  have been in the package.xml but are being excluded due to the include/ignore logic.  This is used so that you can see new
-	  members that have been added which you may want to include.
+	- A new tmp/excludedPackage.xml file will be generated with each package.xml to show those metadata members which would normally
+	  have been in the package.xml but are being excluded due to the include/ignore logic.  This is used so that you can review
+	  members that have been excluded which you may want to include.
 	- The CreatePackageXml process has been refactored to try to simplify the maintenance of the code.  The
 	  List Metadata calls have been updated to batch them in groups of 3.  The Create Package XML output has been
 	  updated to include the # of components added for each type.

@@ -63,7 +63,7 @@ public class CreatePackageXml extends SalesforceTask {
 	
 	protected Map<String, List<String>> typesMap = new HashMap<String, List<String>>();
 
-	public static final String EXCLUDED_PACKAGE_XML_FILENAME = "excludedPackage.xml";
+	public static final String EXCLUDED_PACKAGE_XML_FILENAME = "tmp/excludedPackage.xml";
 	protected Map<String, List<String>> excludedTypesMap = new HashMap<String, List<String>>();
 	public static final String[] EXCLUDED_PACKAGE_XML_COMMENTS = new String[] {
 		EXCLUDED_PACKAGE_XML_FILENAME,
