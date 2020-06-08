@@ -302,8 +302,6 @@ public class SalesforceTask extends Task {
 		OBJECT_HYPHEN_TYPES.add(SF_INCLUDE_LAYOUTS.metadataName);
 		OBJECT_HYPHEN_TYPES.add(SF_INCLUDE_OBJECT_TRANSLATIONS.metadataName);
 
-		OBJECT_RELATED_TYPES.add(SF_INCLUDE_ASSIGNMENT_RULES.metadataName);
-		OBJECT_RELATED_TYPES.add(SF_INCLUDE_AUTO_RESPONSE_RULES.metadataName);
 		OBJECT_RELATED_TYPES.add(SF_INCLUDE_SHARING_RULES.metadataName);
 		OBJECT_RELATED_TYPES.add(SF_INCLUDE_TOPICS_FOR_OBJECTS.metadataName);
 		OBJECT_RELATED_TYPES.add(SF_INCLUDE_TABS.metadataName);
@@ -502,7 +500,6 @@ public class SalesforceTask extends Task {
 			// The related object is either not included or is ignored
 			return false;
 		}
-
 		return true;
 	}
 
@@ -515,7 +512,7 @@ public class SalesforceTask extends Task {
 			objectName = memberName.split("-", 2)[0];
 		} else if (OBJECT_RELATED_TYPES.contains(typeName)) {
 			// This type just uses the object name as the memberName
-			if (typeName == SF_INCLUDE_TABS.metadataName) {
+			if (typeName.equals(SF_INCLUDE_TABS.metadataName)) {
 				// Only use the Tab Name as the objectName if it ends with __c
 				if (memberName.endsWith("__c")) {
 					objectName = memberName;
