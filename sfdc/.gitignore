@@ -2,6 +2,7 @@ bin/
 tmp/
 doc/
 login.properties
+excludedPackage.xml
 .DS_Store
 data/status/
 data/config/process-conf.xml
