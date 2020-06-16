@@ -473,15 +473,19 @@ public class SalesforceTask extends Task {
 	}
 
 	protected boolean includeMetadata(String typeName, String memberName, String namespace) {
+		String objectName = getObjectName(typeName, memberName);
+		String objectNamespace = getObjectNamespace(objectName);
 		// First check to see if this namespace/typeName is allowed
-		if (namespace != null && namespace.trim().length() > 0) {
+		if ((namespace != null && namespace.trim().length() > 0) ||
+				(objectNamespace != null && objectNamespace.trim().length() > 0)){
 			// This member is in a namespace so check to see if the namespace/type are allowed
 			if (!managedPackageTypes.contains(typeName)) {
 				// This type is not allowed for managed packages
 				return false;
 			}
 
-			if (!getIncludeIgnore(SF_INCLUDE_INSTALLED_PACKAGES.metadataName, namespace)) {
+			if ((namespace != null && namespace.trim().length() > 0 && !getIncludeIgnore(SF_INCLUDE_INSTALLED_PACKAGES.metadataName, namespace)) ||
+					(objectNamespace != null && objectNamespace.trim().length() > 0 && !getIncludeIgnore(SF_INCLUDE_INSTALLED_PACKAGES.metadataName, objectNamespace))) {
 				// This namespace is either not included or is ignored
 				return false;
 			}
@@ -495,7 +499,6 @@ public class SalesforceTask extends Task {
 
 		// Check to see if this is an "Object" type (i.e. has an Object name as the prefix) and determine
 		// whether the associated Object is being included
-		String objectName = getObjectName(typeName, memberName);
 		if (objectName != null && !getIncludeIgnore("CustomObject", objectName)) {
 			// The related object is either not included or is ignored
 			return false;
