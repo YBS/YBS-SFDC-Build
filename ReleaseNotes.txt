@@ -1,6 +1,10 @@
 YBS Build Release Notes
 -----------------------
 
+v48.1:
+    - Added following Metadata Types/Properties:
+        - LightningComponentBundle / sf.includeLightningComponentBundles
+
 v48.0:
 	- Updated build to use API version 48.0 (Spring '20)
 	- This version required Java 11 or later - must upgrade

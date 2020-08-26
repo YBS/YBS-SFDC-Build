@@ -43,7 +43,7 @@ import com.sforce.ws.ConnectorConfig;
 public class SalesforceTask extends Task {
 
 	public static final double API_VERSION = 48.0;
-	public static final String BUILD_VERSION = "48.0";
+	public static final String BUILD_VERSION = "48.1";
 
 	public static final String SF_USER_PROPERTY_NAME = "sf.username";
 	public static final String SF_PASSWORD_PROPERTY_NAME = "sf.password";
@@ -106,6 +106,7 @@ public class SalesforceTask extends Task {
 	public static final PackageType SF_INCLUDE_SCONTROLS = new PackageType("sf.includeScontrols", "Scontrol");
 	public static final PackageType SF_INCLUDE_STATIC_RESOURCES = new PackageType("sf.includeStaticResources", "StaticResource");
 	public static final PackageType SF_INCLUDE_AURA_DEFINITION_BUNDLES = new PackageType("sf.includeAuraDefinitionBundles", "AuraDefinitionBundle");
+	public static final PackageType SF_INCLUDE_LIGHTNING_COMPONENT_BUNDLES = new PackageType("sf.includeLightningComponentBundles", "LightningComponentBundle");
 	public static final PackageType SF_INCLUDE_PLATFORM_CACHE_PARTITIONS = new PackageType("sf.includePlatformCachePartitions", "PlatformCachePartition");
 	public static final PackageType SF_INCLUDE_EMAIL_SERVICES_FUNCTIONS = new PackageType("sf.includeEmailServicesFunctions", "EmailServicesFunction");
 	
