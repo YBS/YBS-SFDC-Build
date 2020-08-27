@@ -64,6 +64,7 @@ SOFTWARE.
 
 		<javac  srcdir="${src.dir}"
 				destdir="${bin.dir}"
+				target="11.0"
 				deprecation="off"
 				nowarn="on"
 				debug="true"
