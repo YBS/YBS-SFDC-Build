@@ -43,7 +43,7 @@ import com.sforce.ws.ConnectorConfig;
 public class SalesforceTask extends Task {
 
 	public static final double API_VERSION = 48.0;
-	public static final String BUILD_VERSION = "48.0";
+	public static final String BUILD_VERSION = "48.1";
 
 	public static final String SF_USER_PROPERTY_NAME = "sf.username";
 	public static final String SF_PASSWORD_PROPERTY_NAME = "sf.password";
@@ -286,6 +286,7 @@ public class SalesforceTask extends Task {
 	public static final PackageType SF_INCLUDE_BOTS = new PackageType("sf.includeBots", "Bot");
 	public static final PackageType SF_INCLUDE_BOT_VERSIONS = new PackageType("sf.includeBotVersions", "BotVersion");
 	public static final PackageType SF_INCLUDE_MI_DOMAINS = new PackageType("sf.includeMIDomains", "MIDomain");
+	public static final PackageType SF_INCLUDE_RECORD_ACTION_DEPLOYMENTS = new PackageType("sf.includeRecordActionDeployments", "RecordActionDeployment");
 
 	// InstalledPackage values are not added into package.xml because you cannot install a Managed Package through Metadata
 	// However, they are used to control which installed packages should be included/ignored/excluded
