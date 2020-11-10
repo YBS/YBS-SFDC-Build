@@ -332,22 +332,20 @@ public class CreatePackageXml extends SalesforceTask {
 				PackageType packageType = packageTypeMap.get(typeName);
 
 				String namespace = p.getNamespacePrefix();
-				if (managedPackageTypes.contains(typeName) || namespace == null || namespace.trim().length() == 0) {
-					String fullName = p.getFullName();
-					String matchName = fullName;
-					String[] splitNames = fullName.split("\\.");
-					if (splitNames.length == 2) {
-						// This is a subset of Object so it include the Object name first and we just want the component name
-						String objectName = splitNames[0];
-						matchName = splitNames[1];
-					}
-					if (packageType.memberPrefix == null || packageType.memberPrefix.trim().length() == 0 ||
-							matchName.startsWith(packageType.memberPrefix)) {
-						if (addTypeMember(typeName, fullName, namespace)) {
-							int typeCount = typeCountMap.get(typeName);
-							++typeCount;
-							typeCountMap.put(typeName, typeCount);
-						}
+				String fullName = p.getFullName();
+				String matchName = fullName;
+				String[] splitNames = fullName.split("\\.");
+				if (splitNames.length == 2) {
+					// This is a subset of Object so it include the Object name first and we just want the component name
+					String objectName = splitNames[0];
+					matchName = splitNames[1];
+				}
+				if (packageType.memberPrefix == null || packageType.memberPrefix.trim().length() == 0 ||
+						matchName.startsWith(packageType.memberPrefix)) {
+					if (addTypeMember(typeName, fullName, namespace)) {
+						int typeCount = typeCountMap.get(typeName);
+						++typeCount;
+						typeCountMap.put(typeName, typeCount);
 					}
 				}
 			}
@@ -390,17 +388,15 @@ public class CreatePackageXml extends SalesforceTask {
 					String name = (String) so.getField(nameFieldName);
 					String namespacePrefix = (String) so.getField(namespaceFieldName);
 					if (name != null) {
-						if (managedPackageTypes.contains(typeName) || namespacePrefix == null || namespacePrefix.trim().length() == 0) {
-							String fullName = name;
-							if (namespacePrefix != null && namespacePrefix.trim().length() > 0) {
-								fullName = namespacePrefix + "__" + name;
-							}
-							String matchName = fullName;
-							if (memberPrefix == null || memberPrefix.trim().length() == 0 ||
-									matchName.startsWith(memberPrefix)) {
-								if (addTypeMember(typeName, fullName, namespacePrefix)) {
-									++typeCount;
-								}
+						String fullName = name;
+						if (namespacePrefix != null && namespacePrefix.trim().length() > 0) {
+							fullName = namespacePrefix + "__" + name;
+						}
+						String matchName = fullName;
+						if (memberPrefix == null || memberPrefix.trim().length() == 0 ||
+								matchName.startsWith(memberPrefix)) {
+							if (addTypeMember(typeName, fullName, namespacePrefix)) {
+								++typeCount;
 							}
 						}
 					}
@@ -433,17 +429,15 @@ public class CreatePackageXml extends SalesforceTask {
 			FileProperties[] properties = metadataConnection.listMetadata(new ListMetadataQuery[] {query}, API_VERSION);
 			for (FileProperties p : properties) {
 				String namespace = p.getNamespacePrefix();
-				if (managedPackageTypes.contains("CustomObject") || namespace == null || namespace.trim().length() == 0) {
-					String objectName = p.getFullName();
-					String objectEnumId = p.getId();
-					if (!objectName.endsWith("__c") && !objectName.endsWith("__mdt")) {
-						// Standard object so use name as enum
-						objectEnumId = objectName;
-					}
-					objectNames.add(objectName);
-					objectNameEnumIdMap.put(objectName,  objectEnumId);
-					objectNamespaceMap.put(objectName,  namespace);
+				String objectName = p.getFullName();
+				String objectEnumId = p.getId();
+				if (!objectName.endsWith("__c") && !objectName.endsWith("__mdt")) {
+					// Standard object so use name as enum
+					objectEnumId = objectName;
 				}
+				objectNames.add(objectName);
+				objectNameEnumIdMap.put(objectName,  objectEnumId);
+				objectNamespaceMap.put(objectName,  namespace);
 			}
 			long elapsedTime = System.nanoTime() - startTime;
 			log("Cached objects from List Metadata [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
@@ -490,15 +484,13 @@ public class CreatePackageXml extends SalesforceTask {
 						tableEnumOrId = ((Layout) so).getTableEnumOrId();
 						namespace = ((Layout)so).getNamespacePrefix();
 					}
-					if (managedPackageTypes.contains(typeName) || namespace == null || namespace.trim().length() == 0) {
-						if (tableEnumOrId != null) {
-							List<com.sforce.soap.tooling.sobject.SObject> objects = objectResultMap.get(tableEnumOrId);
-							if (objects == null) {
-								objects = new ArrayList<com.sforce.soap.tooling.sobject.SObject>();
-								objectResultMap.put(tableEnumOrId, objects);
-							}
-							objects.add(so);
+					if (tableEnumOrId != null) {
+						List<com.sforce.soap.tooling.sobject.SObject> objects = objectResultMap.get(tableEnumOrId);
+						if (objects == null) {
+							objects = new ArrayList<com.sforce.soap.tooling.sobject.SObject>();
+							objectResultMap.put(tableEnumOrId, objects);
 						}
+						objects.add(so);
 					}
 				}
 				if (qr.isDone()) {
@@ -599,11 +591,7 @@ public class CreatePackageXml extends SalesforceTask {
 			long startTime = System.nanoTime();
 			int typeCount = 0;
 			String query = "select Id, Name, NamespacePrefix from " + typeName;
-			if (managedPackageTypes.contains(typeName)) {
-				query += " order by Name";
-			} else {
-				query += " where NamespacePrefix = null order by Name";
-			}
+			query += " order by Name";
 			Boolean done = false;
 			com.sforce.soap.tooling.QueryResult qr = toolingConnection.query(query);
 			while (!done) {
@@ -726,9 +714,6 @@ public class CreatePackageXml extends SalesforceTask {
 		try {
 			String soql = "select Id, DeveloperName, NamespacePrefix from Folder where DeveloperName != null " +
 					" and Type='" + folderType + "' ";
-			if (!managedPackageTypes.contains(folderType)) {
-				soql += " AND NamespacePrefix = null ";
-			}
 			PartnerConnection connection = getPartnerConnection();
 			QueryResult qr = connection.query(soql);
 			SObject[] soqlFolders = qr.getRecords();

@@ -58,8 +58,6 @@ public class SalesforceTask extends Task {
 
 	public static final String SF_PRINT_UNUSED_TYPES = "sf.printUnusedTypes";
 
-	protected HashSet<String> managedPackageTypes = new HashSet<String>();
-
 	/*
 		The following variables are used to replace the existing ignore approach.  The new approach allows
 		for metadata types to be either ignored (using the ignorePackage.xml file) or specifically
@@ -85,8 +83,6 @@ public class SalesforceTask extends Task {
 	// Property Names for salesforce.properties file to control metadata that is
 	// retrieved/deployed
 	
-	public static final String SF_INCLUDE_MANAGED_PACKAGE_TYPES = "sf.includeManagedPackageTypes";
-
 	public static final int ADD_METHOD_LIST_METADATA = 0; // Default
 	public static final int ADD_METHOD_FOLDER = 1;
 	public static final int ADD_METHOD_TOOLING_API = 2;
@@ -333,8 +329,7 @@ public class SalesforceTask extends Task {
 	@Override
 	public void init() throws BuildException {
 		loadIncludeIgnorePackageFiles();
-		loadManagedPackageTypes();
-		
+
 		super.init();
 	}
 	
@@ -462,30 +457,13 @@ public class SalesforceTask extends Task {
 		return added;
 	}
 
-	protected void loadManagedPackageTypes() {
-		managedPackageTypes.clear();
-		
-		String managedPackageTypesProperty = getProject().getProperty(SF_INCLUDE_MANAGED_PACKAGE_TYPES);
-		if (managedPackageTypesProperty != null && managedPackageTypesProperty.trim().length() > 0) {
-			for (String type : managedPackageTypesProperty.split(";")) {
-				managedPackageTypes.add(type);
-			}
-		}
-		
-	}
-
 	protected boolean includeMetadata(String typeName, String memberName, String namespace) {
 		String objectName = getObjectName(typeName, memberName);
 		String objectNamespace = getObjectNamespace(objectName);
 		// First check to see if this namespace/typeName is allowed
 		if ((namespace != null && namespace.trim().length() > 0) ||
 				(objectNamespace != null && objectNamespace.trim().length() > 0)){
-			// This member is in a namespace so check to see if the namespace/type are allowed
-			if (!managedPackageTypes.contains(typeName)) {
-				// This type is not allowed for managed packages
-				return false;
-			}
-
+			// This member is in a namespace so check to see if the namespace is allowed
 			if ((namespace != null && namespace.trim().length() > 0 && !getIncludeIgnore(SF_INCLUDE_INSTALLED_PACKAGES.metadataName, namespace)) ||
 					(objectNamespace != null && objectNamespace.trim().length() > 0 && !getIncludeIgnore(SF_INCLUDE_INSTALLED_PACKAGES.metadataName, objectNamespace))) {
 				// This namespace is either not included or is ignored
