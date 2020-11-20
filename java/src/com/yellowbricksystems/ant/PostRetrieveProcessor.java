@@ -656,6 +656,14 @@ public class PostRetrieveProcessor extends SalesforceTask {
 								}
 							}
 						}
+						// enableLicensing - Remove these nodes because of Production/Sandbox differences
+						NodeList enableLicensingNodes = objectElement.getElementsByTagName("enableLicensing");
+						if (enableLicensingNodes != null) {
+							for (int j=0; j < enableLicensingNodes.getLength(); j++) {
+								Node enableLicensingNode = enableLicensingNodes.item(j);
+								removeNodes.add(enableLicensingNode);
+							}
+						}
 						if (removeNodes.size() > 0) {
 							ProcessorUtilities.removeNodes(doc, objectNode, removeNodes);
 						}

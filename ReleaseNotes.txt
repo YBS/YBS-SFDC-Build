@@ -1,6 +1,9 @@
 YBS Build Release Notes
 -----------------------
 
+v48.2:
+    - Updated support for installed packages.
+    
 v48.1:
     - Added following Metadata Types/Properties:
         - LightningComponentBundle / sf.includeLightningComponentBundles

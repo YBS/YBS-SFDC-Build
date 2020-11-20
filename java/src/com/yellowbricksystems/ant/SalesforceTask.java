@@ -43,7 +43,7 @@ import com.sforce.ws.ConnectorConfig;
 public class SalesforceTask extends Task {
 
 	public static final double API_VERSION = 48.0;
-	public static final String BUILD_VERSION = "48.1";
+	public static final String BUILD_VERSION = "48.2";
 
 	public static final String SF_USER_PROPERTY_NAME = "sf.username";
 	public static final String SF_PASSWORD_PROPERTY_NAME = "sf.password";
@@ -474,23 +474,28 @@ public class SalesforceTask extends Task {
 		
 	}
 
+	protected boolean includeNamespace(String namespace) {
+		if ((namespace != null && namespace.trim().length() > 0)){
+			if (!getPropertyBoolean(SF_INCLUDE_INSTALLED_PACKAGES)) {
+				// Managed packages are not enabled
+				return false;
+			}
+
+			if ((namespace != null && namespace.trim().length() > 0 && !getIncludeIgnore(SF_INCLUDE_INSTALLED_PACKAGES.metadataName, namespace))) {
+				// This namespace is either not included or is ignored
+				return false;
+			}
+		}
+		return true;
+	}
+
 	protected boolean includeMetadata(String typeName, String memberName, String namespace) {
 		String objectName = getObjectName(typeName, memberName);
 		String objectNamespace = getObjectNamespace(objectName);
 		// First check to see if this namespace/typeName is allowed
-		if ((namespace != null && namespace.trim().length() > 0) ||
-				(objectNamespace != null && objectNamespace.trim().length() > 0)){
-			// This member is in a namespace so check to see if the namespace/type are allowed
-			if (!managedPackageTypes.contains(typeName)) {
-				// This type is not allowed for managed packages
-				return false;
-			}
-
-			if ((namespace != null && namespace.trim().length() > 0 && !getIncludeIgnore(SF_INCLUDE_INSTALLED_PACKAGES.metadataName, namespace)) ||
-					(objectNamespace != null && objectNamespace.trim().length() > 0 && !getIncludeIgnore(SF_INCLUDE_INSTALLED_PACKAGES.metadataName, objectNamespace))) {
-				// This namespace is either not included or is ignored
-				return false;
-			}
+		if (!includeNamespace(namespace) || !includeNamespace(objectNamespace)) {
+			// Either the member namespace or the corresponding object namespace is not allowed
+			return false;
 		}
 
 		// At this point we have validated the namespace, so check the type/member
@@ -528,6 +533,11 @@ public class SalesforceTask extends Task {
 		} else if (memberName.contains(".")) {
 			// This is a dot notation type
 			objectName = memberName.split("\\.", 2)[0];
+			if (typeName.equals(SF_INCLUDE_CUSTOM_METADATA.metadataName)) {
+				// Custom Metadata values are not including __mdt in the dot notation
+				// so we need to add it to determine whether the Custom Metadata Object is being included
+				objectName += "__mdt";
+			}
 		}
 		return objectName;
 	}

@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
+import com.sforce.soap.metadata.ManageableState;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 
@@ -279,12 +280,11 @@ public class CreatePackageXml extends SalesforceTask {
 		} else {
 			String objectName = getObjectName(typeName, memberName);
 			String objectNamespace = getObjectNamespace(objectName);
-			if (!((namespace != null && namespace.trim().length() > 0) ||
-					(objectNamespace != null && objectNamespace.trim().length() >0))){
-				// Keep track of which unmanaged members we are excluding from the package.xml
+			if (includeNamespace(namespace) && includeNamespace(objectNamespace)) {
+				// Keep track of which members we are excluding from the package.xml
 				// We are preventing managed members & unmanaged members that are associated to
-				// managed objects from being added to the excludedPackage.xml file to prevent
-				// access issues between Production & Sandbox
+				// managed objects from being added to the excludedPackage.xml file if the
+				// namespace is not being included
 				List<String> excludedMemberList = excludedTypesMap.get(typeName);
 				if (excludedMemberList == null) {
 					excludedMemberList = new ArrayList<String>();
@@ -332,9 +332,20 @@ public class CreatePackageXml extends SalesforceTask {
 				PackageType packageType = packageTypeMap.get(typeName);
 
 				String namespace = p.getNamespacePrefix();
-				if (managedPackageTypes.contains(typeName) || namespace == null || namespace.trim().length() == 0) {
+				if (getPropertyBoolean(SF_INCLUDE_INSTALLED_PACKAGES) || namespace == null || namespace.trim().length() == 0) {
 					String fullName = p.getFullName();
-					String matchName = fullName;
+					if (typeName.equals(SF_INCLUDE_LAYOUTS.metadataName)) {
+						// See if we have to fix bug in Layout full name where namespace is not included on managed layouts
+						// that are on unmanaged objects
+						if (p.getManageableState() == ManageableState.installed) {
+							// This is an installed/managed layout so rebuild the fullname the correct way
+							String[] nameParts = fullName.split("-", 2);
+							String goodFullName = nameParts[0] + "-" + p.getNamespacePrefix() + "__" + nameParts[1];
+							fullName = goodFullName;
+						}
+					}
+
+						String matchName = fullName;
 					String[] splitNames = fullName.split("\\.");
 					if (splitNames.length == 2) {
 						// This is a subset of Object so it include the Object name first and we just want the component name
@@ -390,7 +401,7 @@ public class CreatePackageXml extends SalesforceTask {
 					String name = (String) so.getField(nameFieldName);
 					String namespacePrefix = (String) so.getField(namespaceFieldName);
 					if (name != null) {
-						if (managedPackageTypes.contains(typeName) || namespacePrefix == null || namespacePrefix.trim().length() == 0) {
+						if (getPropertyBoolean(SF_INCLUDE_INSTALLED_PACKAGES) || namespacePrefix == null || namespacePrefix.trim().length() == 0) {
 							String fullName = name;
 							if (namespacePrefix != null && namespacePrefix.trim().length() > 0) {
 								fullName = namespacePrefix + "__" + name;
@@ -433,7 +444,7 @@ public class CreatePackageXml extends SalesforceTask {
 			FileProperties[] properties = metadataConnection.listMetadata(new ListMetadataQuery[] {query}, API_VERSION);
 			for (FileProperties p : properties) {
 				String namespace = p.getNamespacePrefix();
-				if (managedPackageTypes.contains("CustomObject") || namespace == null || namespace.trim().length() == 0) {
+				if (getPropertyBoolean(SF_INCLUDE_INSTALLED_PACKAGES) || namespace == null || namespace.trim().length() == 0) {
 					String objectName = p.getFullName();
 					String objectEnumId = p.getId();
 					if (!objectName.endsWith("__c") && !objectName.endsWith("__mdt")) {
@@ -451,103 +462,17 @@ public class CreatePackageXml extends SalesforceTask {
 			ex.printStackTrace();
 			throw new BuildException("Exception trying to load objects.");
 		}
-		
 	}
 	
 	protected void addObjects() {
 		for (String objectName : objectNames) {
 			String namespace = objectNamespaceMap.get(objectName);
-			addTypeMember("CustomObject", objectName, namespace);
-		}
-	}
-	
-	protected void addObjectToolingType(String propertyName, String typeName) throws BuildException{
-		if (getPropertyBoolean(propertyName)) {
-			addObjectTypeFromToolingQuery(typeName);
-		}
-	}
-	
-	protected void addObjectTypeFromToolingQuery(String typeName) throws BuildException {
-		try {
-			long startTime = System.nanoTime();
-			int typeCount = 0;
-			Map<String, List<com.sforce.soap.tooling.sobject.SObject>> objectResultMap = new HashMap<String, List<com.sforce.soap.tooling.sobject.SObject>>();
-			String query = "select Id, DeveloperName, TableEnumOrId, NamespacePrefix from CustomField order by DeveloperName";
-			if (typeName.equals("Layout")) {
-				query = "select Id, Name, TableEnumOrId, NamespacePrefix from Layout where LayoutType = 'Standard' order by Name";
+			if (namespace == null || namespace.trim().length() == 0) {
+				// Only Unmanaged Objects can be added to package.xml due to deployment errors when trying to
+				// deploy complete managed objects.  The managed package object components will still be included,
+				// just not the entire CustomObject metadata
+				addTypeMember("CustomObject", objectName, namespace);
 			}
-			Boolean done = false;
-			com.sforce.soap.tooling.QueryResult qr = toolingConnection.query(query);
-			while (!done) {
-				com.sforce.soap.tooling.sobject.SObject[] records = qr.getRecords();
-				String namespace = null;
-				for (com.sforce.soap.tooling.sobject.SObject so : records) {
-					String tableEnumOrId = null;
-					if (so instanceof CustomField) {
-						tableEnumOrId = ((CustomField) so).getTableEnumOrId();
-						namespace = ((CustomField)so).getNamespacePrefix();
-					} else if (so instanceof Layout) {
-						tableEnumOrId = ((Layout) so).getTableEnumOrId();
-						namespace = ((Layout)so).getNamespacePrefix();
-					}
-					if (managedPackageTypes.contains(typeName) || namespace == null || namespace.trim().length() == 0) {
-						if (tableEnumOrId != null) {
-							List<com.sforce.soap.tooling.sobject.SObject> objects = objectResultMap.get(tableEnumOrId);
-							if (objects == null) {
-								objects = new ArrayList<com.sforce.soap.tooling.sobject.SObject>();
-								objectResultMap.put(tableEnumOrId, objects);
-							}
-							objects.add(so);
-						}
-					}
-				}
-				if (qr.isDone()) {
-					done = true;
-				} else {
-					qr = toolingConnection.queryMore(qr.getQueryLocator());
-				}
-			}
-			// Loop through objects in alphabetical order
-			for (String objectName : objectNames) {
-				String objectEnumOrId = objectNameEnumIdMap.get(objectName);
-				if (objectEnumOrId != null) {
-					List<com.sforce.soap.tooling.sobject.SObject> objects = objectResultMap.get(objectEnumOrId);
-					if (objects != null) {
-						for (com.sforce.soap.tooling.sobject.SObject so : objects) {
-							String fullName = objectName ;
-							String namespace = null;
-							if (so instanceof CustomField) {
-								CustomField cf = (CustomField) so;
-								namespace = cf.getNamespacePrefix();
-								if (namespace != null && namespace.trim().length() > 0) {
-									fullName += "." + namespace + "__" + cf.getDeveloperName() + "__c";
-								} else {
-									fullName += "." + ((CustomField) so).getDeveloperName() + "__c";
-								}
-							}
-							if (so instanceof Layout) {
-								Layout l = (Layout) so;
-								namespace = l.getNamespacePrefix();
-								if (namespace != null && namespace.trim().length() > 0) {
-									fullName += "-" + namespace + "__" + l.getName();
-								} else {
-									fullName += "-" + l.getName();
-								}
-								// Need to encode Layout name since it is not a DeveloperName
-								fullName = encodePackageMember(fullName);
-							}
-							if (addTypeMember(typeName, fullName, namespace)) {
-								++typeCount;
-							}
-						}
-					}
-				}
-			}
-			long elapsedTime = System.nanoTime() - startTime;
-			log("Added " + typeName + " (" + typeCount + ") from Tooling query [" + TimeUnit.NANOSECONDS.toMillis(elapsedTime) + " ms]");
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			throw new BuildException("Exception trying to add " + typeName + " components.");
 		}
 	}
 	
@@ -599,7 +524,7 @@ public class CreatePackageXml extends SalesforceTask {
 			long startTime = System.nanoTime();
 			int typeCount = 0;
 			String query = "select Id, Name, NamespacePrefix from " + typeName;
-			if (managedPackageTypes.contains(typeName)) {
+			if (getPropertyBoolean(SF_INCLUDE_INSTALLED_PACKAGES)) {
 				query += " order by Name";
 			} else {
 				query += " where NamespacePrefix = null order by Name";
@@ -726,7 +651,7 @@ public class CreatePackageXml extends SalesforceTask {
 		try {
 			String soql = "select Id, DeveloperName, NamespacePrefix from Folder where DeveloperName != null " +
 					" and Type='" + folderType + "' ";
-			if (!managedPackageTypes.contains(folderType)) {
+			if (!getPropertyBoolean(SF_INCLUDE_INSTALLED_PACKAGES)) {
 				soql += " AND NamespacePrefix = null ";
 			}
 			PartnerConnection connection = getPartnerConnection();
