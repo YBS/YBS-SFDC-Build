@@ -2,12 +2,16 @@ YBS Build Release Notes
 -----------------------
 
 v48.2:
-    - Updated support for installed packages.
+    - Updated support for installed packages.  To include Managed Packages in the build make the following updates:
+        - Set sf.includeInstalledPackages=true in salesforce.properties
+        - Update includePackage.xml to add a section with <type>InstalledPackage</type> and then add a <members> tag for
+          each namespace that you want to include.
+    - Fixed support for Custom Metadata
     
 v48.1:
     - Added following Metadata Types/Properties:
         - LightningComponentBundle / sf.includeLightningComponentBundles
-		- RecordActionDeployment / sf.includeRecordActionDeployments
+        - RecordActionDeployment / sf.includeRecordActionDeployments
 
 v48.0:
 	- Updated build to use API version 48.0 (Spring '20)
